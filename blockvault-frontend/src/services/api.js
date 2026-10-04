@@ -5,8 +5,21 @@
  * Uses REACT_APP_API_URL env var, falling back to CRA's proxy (/api/...).
  */
 
-const API_BASE = process.env.REACT_APP_API_URL || 'https://p2-c6yu.onrender.com/api';
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || API_BASE.replace(/\/api\/?$/, '') || 'https://p2-c6yu.onrender.com';
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+const cleanBaseUrl = API_URL.replace(/\/+$/, '');
+const BACKEND_URL = cleanBaseUrl.replace(/\/api\/?$/, '');
+
+function buildUrl(endpoint) {
+  if (/^https?:\/\//i.test(endpoint)) return endpoint;
+  let path = endpoint || '';
+  if (!path.startsWith('/')) path = '/' + path;
+  if (path.startsWith('/api/')) {
+    path = path.slice(4);
+  } else if (path === '/api') {
+    path = '';
+  }
+  return `${cleanBaseUrl}${path}`;
+}
 
 // ── Generic fetch wrapper with error handling ────────────────────────────
 async function request(method, endpoint, body = null, isFormData = false) {
@@ -19,7 +32,8 @@ async function request(method, endpoint, body = null, isFormData = false) {
   };
 
   try {
-    const response = await fetch(`${API_BASE}${endpoint}`, options);
+    const url = buildUrl(endpoint);
+    const response = await fetch(url, options);
     const data = await response.json();
 
     // Attach HTTP status to the returned object for error diagnosis
@@ -177,10 +191,12 @@ const apiService = {
   sendContactMessage,
   // Auth
   adminLogin,
-  // URLs
-  API_BASE,
+  // URLs & Helpers
+  API_URL,
+  API_BASE: cleanBaseUrl,
   BACKEND_URL,
+  buildUrl,
 };
 
-export { API_BASE, BACKEND_URL };
+export { API_URL, cleanBaseUrl as API_BASE, BACKEND_URL, buildUrl };
 export default apiService;
