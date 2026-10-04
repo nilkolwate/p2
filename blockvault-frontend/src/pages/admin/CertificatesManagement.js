@@ -36,8 +36,8 @@ const initialCertificates = [
     hash: '0c9a766f4444d15523cb644447df5478b255afcab9badeeeaadb64648f8c17f4',
     blockNumber: 'Block #1',
     issuer: 'Government Polytechnic Amravati',
-    pdfUrl: 'http://localhost:5000/certificates/BV-2026-2293B257.pdf',
-    verificationUrl: 'http://localhost:5000/verify/BV-2026-2293B257',
+    pdfUrl: `${apiService.BACKEND_URL}/certificates/BV-2026-2293B257.pdf`,
+    verificationUrl: `${apiService.BACKEND_URL}/verify/BV-2026-2293B257`,
   }
 ];
 
@@ -122,7 +122,7 @@ export default function CertificatesManagement() {
 
   // ACTION 2: Download Real PDF Certificate
   const handleDownload = (cert) => {
-    const downloadUrl = cert.pdfUrl || `http://localhost:5000/certificates/${cert.id}.pdf`;
+    const downloadUrl = cert.pdfUrl || `${apiService.BACKEND_URL}/certificates/${cert.id}.pdf`;
     const link = document.createElement('a');
     link.href = downloadUrl;
     link.download = `Certificate_${cert.id}_${(cert.studentName || 'student').replace(/\s+/g, '_')}.pdf`;
@@ -486,7 +486,7 @@ export default function CertificatesManagement() {
                   <strong>{viewModalCert.studentName}</strong> — {viewModalCert.course} ({viewModalCert.institution || 'Government Polytechnic Amravati'})
                 </span>
                 <a
-                  href={viewModalCert.pdfUrl || `http://localhost:5000/certificates/${viewModalCert.id}.pdf`}
+                  href={viewModalCert.pdfUrl || `${apiService.BACKEND_URL}/certificates/${viewModalCert.id}.pdf`}
                   target="_blank"
                   rel="noreferrer"
                   className="text-[#1F3D2B] font-semibold flex items-center gap-1 hover:underline"
@@ -498,7 +498,7 @@ export default function CertificatesManagement() {
               {/* Landscape A4 Certificate PDF Embed */}
               <div className="relative w-full h-[58vh] min-h-[420px] bg-gray-100 rounded-2xl overflow-hidden border border-gray-300 shadow-inner">
                 <iframe
-                  src={viewModalCert.pdfUrl || `http://localhost:5000/certificates/${viewModalCert.id}.pdf`}
+                  src={viewModalCert.pdfUrl || `${apiService.BACKEND_URL}/certificates/${viewModalCert.id}.pdf`}
                   title={`Certificate PDF ${viewModalCert.id}`}
                   className="w-full h-full border-0"
                 />
@@ -557,7 +557,7 @@ export default function CertificatesManagement() {
                 </button>
 
                 <a
-                  href={viewModalCert.pdfUrl || `http://localhost:5000/certificates/${viewModalCert.id}.pdf`}
+                  href={viewModalCert.pdfUrl || `${apiService.BACKEND_URL}/certificates/${viewModalCert.id}.pdf`}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors"

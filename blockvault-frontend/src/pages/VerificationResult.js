@@ -108,14 +108,14 @@ export default function VerificationResult() {
       (isVerified
         ? 'Certificate is authentic and permanently verified on the blockchain ledger.'
         : 'Certificate verification failed or certificate has been revoked.'),
-    pdfUrl: blockData?.pdfUrl || `http://localhost:5000/certificates/${certIdToUse}.pdf`,
+    pdfUrl: blockData?.pdfUrl || `${apiService.BACKEND_URL}/certificates/${certIdToUse}.pdf`,
     qrDataUrl: blockData?.qrDataUrl,
   };
 
   const verificationUrl = `${window.location.origin}/verify/${certificateData.id}`;
 
   const downloadOriginalPdf = () => {
-    const downloadUrl = certificateData.pdfUrl || `http://localhost:5000/certificates/${certificateData.id}.pdf`;
+    const downloadUrl = certificateData.pdfUrl || `${apiService.BACKEND_URL}/certificates/${certificateData.id}.pdf`;
     const link = document.createElement('a');
     link.href = downloadUrl;
     link.download = `Certificate_${certificateData.id}.pdf`;
@@ -292,7 +292,7 @@ export default function VerificationResult() {
             </button>
 
             <a
-              href={`http://localhost:5000/verify/${certificateData.id}`}
+              href={`${apiService.BACKEND_URL}/verify/${certificateData.id}`}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center justify-center gap-2 border-2 border-[#1F3D2B] text-[#1F3D2B] py-3.5 px-6 rounded-full font-medium hover:bg-green-50 transition-colors"

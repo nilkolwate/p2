@@ -18,7 +18,7 @@ import Settings from './pages/admin/Settings';
 
 function App() {
   return (
-    <Router>
+    <Router basename={process.env.PUBLIC_URL}>
       <Routes>
         {/* Public routes */}
         <Route element={<PublicLayout />}>

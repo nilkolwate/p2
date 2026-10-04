@@ -2,7 +2,8 @@
   "name": "blockvault-frontend",
   "version": "2.0.0",
   "private": true,
-  "proxy": "http://localhost:5000",
+  "homepage": "https://nilkolwate.github.io/p2",
+  "proxy": "https://p2-c6yu.onrender.com",
   "dependencies": {
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
@@ -14,12 +15,13 @@
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-router-dom": "^7.18.3",
-    "react-scripts": "^5.0.1",
     "recharts": "^3.10.1",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
     "start": "react-scripts start",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d build",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
@@ -44,8 +46,10 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",
-    "autoprefixer": "^10.5.6",
+    "autoprefixer": "^10.6.1",
+    "gh-pages": "^6.3.0",
     "postcss": "^8.5.28",
-    "tailwindcss": "^3.4.17"
+    "react-scripts": "^5.0.1",
+    "tailwindcss": "^3.4.19"
   }
 }

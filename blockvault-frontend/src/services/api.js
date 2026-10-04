@@ -5,7 +5,8 @@
  * Uses REACT_APP_API_URL env var, falling back to CRA's proxy (/api/...).
  */
 
-const API_BASE = process.env.REACT_APP_API_URL || '/api';
+const API_BASE = process.env.REACT_APP_API_URL || 'https://p2-c6yu.onrender.com/api';
+const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || API_BASE.replace(/\/api\/?$/, '') || 'https://p2-c6yu.onrender.com';
 
 // ── Generic fetch wrapper with error handling ────────────────────────────
 async function request(method, endpoint, body = null, isFormData = false) {
@@ -176,6 +177,10 @@ const apiService = {
   sendContactMessage,
   // Auth
   adminLogin,
+  // URLs
+  API_BASE,
+  BACKEND_URL,
 };
 
+export { API_BASE, BACKEND_URL };
 export default apiService;
