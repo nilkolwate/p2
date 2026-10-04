@@ -1,0 +1,192 @@
+.contact-page {
+  min-height: 100vh;
+  background: #f5f7fa;
+  padding: 40px 60px;
+  font-family: Arial, sans-serif;
+  box-sizing: border-box;
+}
+
+/* Header */
+
+.contact-header {
+  text-align: center;
+  margin-bottom: 35px;
+}
+
+.contact-header h1 {
+  margin: 0;
+  color: #183642;
+  font-size: 36px;
+}
+
+.contact-header p {
+  margin-top: 8px;
+  color: #777;
+  font-size: 18px;
+}
+
+
+/* Main Container */
+
+.contact-container {
+  max-width: 1150px;
+  margin: auto;
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 30px;
+}
+
+
+/* Left Help Section */
+
+.help-section {
+  background: white;
+  padding: 30px;
+  border-radius: 18px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+}
+
+.help-section h2 {
+  margin-top: 0;
+  color: #183642;
+  font-size: 28px;
+}
+
+.help-description {
+  color: #777;
+  margin-bottom: 25px;
+}
+
+
+/* Problem List */
+
+.problem-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.problem-item {
+  border: 1px solid #e2e5e8;
+  border-radius: 14px;
+  padding: 20px;
+  background: #fafbfc;
+}
+
+.problem-item h3 {
+  margin-top: 0;
+  color: #183642;
+  font-size: 18px;
+}
+
+.problem-item p {
+  color: #666;
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 45px;
+}
+
+.problem-item button {
+  border: none;
+  background: #183642;
+  color: white;
+  padding: 9px 18px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.problem-item button:hover {
+  background: #245363;
+}
+
+
+/* Right Side */
+
+.contact-side {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.support-card,
+.contact-card {
+  background: white;
+  padding: 30px;
+  border-radius: 18px;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.08);
+}
+
+.support-card h2,
+.contact-card h2 {
+  margin-top: 0;
+  color: #183642;
+}
+
+.support-card p {
+  color: #666;
+  line-height: 1.6;
+}
+
+
+/* Submit Problem Button */
+
+.submit-problem {
+  width: 100%;
+  padding: 13px;
+  margin-top: 15px;
+  border: none;
+  border-radius: 25px;
+  background: #183642;
+  color: white;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.submit-problem:hover {
+  background: #245363;
+}
+
+
+/* Contact Information */
+
+.contact-info {
+  display: flex;
+  gap: 15px;
+  align-items: flex-start;
+  margin-top: 22px;
+}
+
+.contact-info span {
+  font-size: 22px;
+}
+
+.contact-info small {
+  color: #888;
+  font-weight: bold;
+}
+
+.contact-info p {
+  margin: 5px 0 0;
+  color: #444;
+  line-height: 1.4;
+}
+
+
+/* Mobile */
+
+@media (max-width: 850px) {
+
+  .contact-page {
+    padding: 25px 15px;
+  }
+
+  .contact-container {
+    grid-template-columns: 1fr;
+  }
+
+  .problem-list {
+    grid-template-columns: 1fr;
+  }
+
+}

@@ -1,0 +1,177 @@
+* {
+    box-sizing: border-box;
+}
+
+.otp-page {
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 30px;
+    background:
+        radial-gradient(circle at 15% 20%, #e8edf3 0%, transparent 35%),
+        radial-gradient(circle at 85% 80%, #dce5e8 0%, transparent 35%),
+        #f7f8f9;
+    font-family: "Segoe UI", Arial, sans-serif;
+}
+
+.otp-card {
+    width: 470px;
+    padding: 45px 52px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.9);
+    border-radius: 28px;
+    box-shadow:
+        0 25px 70px rgba(31, 48, 61, 0.14),
+        0 5px 20px rgba(31, 48, 61, 0.06);
+    backdrop-filter: blur(15px);
+}
+
+.otp-logo {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 15px;
+    border-radius: 22px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(145deg, #344b5d, #1f303d);
+    color: white;
+    font-size: 32px;
+    box-shadow: 0 10px 25px rgba(31, 48, 61, 0.22);
+}
+
+.otp-brand {
+    color: #62717c;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    margin-bottom: 10px;
+}
+
+.otp-card h1 {
+    margin: 0;
+    color: #243542;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 36px;
+    font-weight: 600;
+}
+
+.otp-card h1 span {
+    color: #527064;
+    font-style: italic;
+}
+
+.otp-subtitle {
+    margin: 8px 0 25px;
+    color: #89939a;
+    font-size: 14px;
+}
+
+.security-icon {
+    width: 58px;
+    height: 58px;
+    margin: 0 auto 15px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #eef3f1;
+    font-size: 25px;
+}
+
+.otp-card h2 {
+    margin: 0 0 10px;
+    color: #34434e;
+    font-size: 19px;
+}
+
+.otp-description {
+    max-width: 330px;
+    margin: 0 auto 25px;
+    color: #8a949b;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.otp-input-box {
+    margin-bottom: 20px;
+}
+
+.otp-input-box input {
+    width: 100%;
+    height: 62px;
+    border: 1px solid #d7dde0;
+    border-radius: 15px;
+    outline: none;
+    background: white;
+    text-align: center;
+    letter-spacing: 12px;
+    font-size: 24px;
+    font-weight: 600;
+    color: #263640;
+}
+
+.otp-input-box input:focus {
+    border-color: #527064;
+    box-shadow: 0 0 0 4px rgba(82, 112, 100, 0.08);
+}
+
+.otp-input-box input::placeholder {
+    color: #b5bdc2;
+    letter-spacing: 10px;
+}
+
+.verify-button {
+    width: 100%;
+    height: 58px;
+    border: none;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #344b5d, #263b48);
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 12px 25px rgba(38, 59, 72, 0.2);
+    transition: 0.25s ease;
+}
+
+.verify-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 30px rgba(38, 59, 72, 0.25);
+}
+
+.verify-button span {
+    margin-left: 8px;
+    font-size: 20px;
+}
+
+.otp-message {
+    margin-top: 18px;
+    color: #527064;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.secure-text {
+    margin-top: 25px;
+    color: #929ba1;
+    font-size: 11px;
+}
+
+@media (max-width: 600px) {
+
+    .otp-page {
+        padding: 18px;
+    }
+
+    .otp-card {
+        width: 100%;
+        padding: 38px 25px;
+    }
+
+    .otp-card h1 {
+        font-size: 32px;
+    }
+}

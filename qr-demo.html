@@ -1,0 +1,476 @@
+<title>BlockVault QR Verification</title>
+<style>
+  :root {
+    --bg: #F5F1E9;
+    --surface: #FFFFFF;
+    --text: #1A1A1A;
+    --text-muted: #6B7280;
+    --accent: #1F3D2B;
+    --accent-light: #6B8F71;
+    --border: #E5E7EB;
+    --success: #10B981;
+    --success-bg: #D1FAE5;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F172A;
+      --surface: #1E293B;
+      --text: #F1F5F9;
+      --text-muted: #94A3B8;
+      --accent: #6B8F71;
+      --accent-light: #8FA999;
+      --border: #334155;
+      --success: #34D399;
+      --success-bg: #064E3B;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #0F172A;
+    --surface: #1E293B;
+    --text: #F1F5F9;
+    --text-muted: #94A3B8;
+    --accent: #6B8F71;
+    --accent-light: #8FA999;
+    --border: #334155;
+    --success: #34D399;
+    --success-bg: #064E3B;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    padding: 24px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    line-height: 1.6;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0 0 12px 0;
+    color: var(--text);
+    line-height: 1.2;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0 0 16px 0;
+    color: var(--text);
+  }
+
+  h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+    color: var(--text);
+  }
+
+  p {
+    margin: 0 0 16px 0;
+    color: var(--text-muted);
+  }
+
+  .subtitle {
+    font-size: 1.125rem;
+    color: var(--text-muted);
+    margin-bottom: 48px;
+  }
+
+  .hero {
+    text-align: center;
+    padding: 48px 0;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 48px;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: var(--success-bg);
+    color: var(--success);
+    border-radius: 999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 24px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+    margin-bottom: 48px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+
+  .qr-container {
+    text-align: center;
+    padding: 24px;
+    background: var(--bg);
+    border-radius: 12px;
+    margin: 24px 0;
+  }
+
+  .qr-code {
+    display: inline-block;
+    padding: 16px;
+    background: white;
+    border-radius: 12px;
+    border: 3px solid var(--accent);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    margin: 32px 0;
+  }
+
+  .step {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .step-number {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    background: var(--accent);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.125rem;
+  }
+
+  .step-content h3 {
+    margin-top: 4px;
+  }
+
+  .info-box {
+    background: var(--success-bg);
+    border-left: 4px solid var(--success);
+    padding: 16px;
+    border-radius: 8px;
+    margin: 24px 0;
+  }
+
+  .info-box p {
+    margin: 0;
+    color: var(--text);
+  }
+
+  .cert-details {
+    font-family: 'Courier New', monospace;
+    font-size: 0.875rem;
+    background: var(--bg);
+    padding: 16px;
+    border-radius: 8px;
+    margin: 16px 0;
+    overflow-x: auto;
+  }
+
+  .cert-details dt {
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-top: 8px;
+  }
+
+  .cert-details dd {
+    color: var(--text);
+    margin: 4px 0 0 0;
+    word-break: break-all;
+  }
+
+  .feature-list {
+    display: grid;
+    gap: 16px;
+    margin: 24px 0;
+  }
+
+  .feature {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .feature-icon {
+    width: 24px;
+    height: 24px;
+    background: var(--success);
+    color: white;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .cta-box {
+    text-align: center;
+    padding: 48px 32px;
+    background: linear-gradient(135deg, var(--accent) 0%, #16281C 100%);
+    color: white;
+    border-radius: 16px;
+    margin: 48px 0;
+  }
+
+  .cta-box h2 {
+    color: white;
+    margin-bottom: 16px;
+  }
+
+  .cta-box p {
+    color: rgba(255,255,255,0.9);
+    max-width: 600px;
+    margin: 0 auto 24px;
+  }
+
+  .button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: white;
+    color: var(--accent);
+    border: none;
+    border-radius: 999px;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    transition: transform 0.2s;
+  }
+
+  .button:hover {
+    transform: translateY(-2px);
+  }
+
+  @media (max-width: 640px) {
+    body {
+      padding: 16px;
+    }
+
+    h1 {
+      font-size: 2rem;
+    }
+
+    .hero {
+      padding: 32px 0;
+    }
+
+    .card {
+      padding: 24px;
+    }
+
+    .grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<div class="container">
+  <div class="hero">
+    <div class="badge">
+      <span>✓</span>
+      <span>Blockchain-Verified Certificates</span>
+    </div>
+    <h1>BlockVault QR Code Verification</h1>
+    <p class="subtitle">Instant certificate authentication powered by blockchain technology and SHA-256 cryptographic hashing</p>
+  </div>
+
+  <div class="grid">
+    <!-- Sample Certificate QR -->
+    <div class="card">
+      <h2>Try It Now</h2>
+      <p>Scan this QR code with your phone to verify a real BlockVault certificate</p>
+
+      <div class="qr-container">
+        <svg class="qr-code" width="200" height="200" viewBox="0 0 33 33">
+          <!-- QR Code for: http://localhost:3000/verify?id=BV-2024-001&hash=e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 -->
+          <rect width="33" height="33" fill="#ffffff"/>
+          <rect x="0" y="0" width="1" height="1" fill="#1F3D2B"/><rect x="1" y="0" width="1" height="1" fill="#1F3D2B"/><rect x="2" y="0" width="1" height="1" fill="#1F3D2B"/><rect x="3" y="0" width="1" height="1" fill="#1F3D2B"/><rect x="4" y="0" width="1" height="1" fill="#1F3D2B"/><rect x="5" y="0" width="1" height="1" fill="#1F3D2B"/><rect x="6" y="0" width="1" height="1" fill="#1F3D2B"/><rect x="8" y="0" width="1" height="1" fill="#1F3D2B"/><rect x="9" y="0" width="1" height="1" fill="#1F3D2B"/><rect x="11" y="0" width="1" height="1" fill="#1F3D2B"/><rect x="13" y="0" width="1" height="1" fill="#1F3D2B"/><rect x="15" y="0" width="1" height="1" fill="#1F3D2B"/><rect x="16" y="0" width="1" height="1" fill="#1F3D2B"/><rect x="18" y="0" width="1" height="1" fill="#1F3D2B"/><rect x="20" y="0" width="1" height="1" fill="#1F3D2B"/><rect x="21" y="0" width="1" height="1" fill="#1F3D2B"/><rect x="24" y="0" width="1" height="1" fill="#1F3D2B"/><rect x="26" y="0" width="1" height="1" fill="#1F3D2B"/><rect x="27" y="0" width="1" height="1" fill="#1F3D2B"/><rect x="28" y="0" width="1" height="1" fill="#1F3D2B"/><rect x="29" y="0" width="1" height="1" fill="#1F3D2B"/><rect x="30" y="0" width="1" height="1" fill="#1F3D2B"/><rect x="31" y="0" width="1" height="1" fill="#1F3D2B"/><rect x="32" y="0" width="1" height="1" fill="#1F3D2B"/>
+          <rect x="0" y="1" width="1" height="1" fill="#1F3D2B"/><rect x="6" y="1" width="1" height="1" fill="#1F3D2B"/><rect x="8" y="1" width="1" height="1" fill="#1F3D2B"/><rect x="10" y="1" width="1" height="1" fill="#1F3D2B"/><rect x="11" y="1" width="1" height="1" fill="#1F3D2B"/><rect x="12" y="1" width="1" height="1" fill="#1F3D2B"/><rect x="14" y="1" width="1" height="1" fill="#1F3D2B"/><rect x="15" y="1" width="1" height="1" fill="#1F3D2B"/><rect x="17" y="1" width="1" height="1" fill="#1F3D2B"/><rect x="18" y="1" width="1" height="1" fill="#1F3D2B"/><rect x="20" y="1" width="1" height="1" fill="#1F3D2B"/><rect x="22" y="1" width="1" height="1" fill="#1F3D2B"/><rect x="23" y="1" width="1" height="1" fill="#1F3D2B"/><rect x="24" y="1" width="1" height="1" fill="#1F3D2B"/><rect x="26" y="1" width="1" height="1" fill="#1F3D2B"/><rect x="32" y="1" width="1" height="1" fill="#1F3D2B"/>
+          <rect x="0" y="2" width="1" height="1" fill="#1F3D2B"/><rect x="2" y="2" width="1" height="1" fill="#1F3D2B"/><rect x="3" y="2" width="1" height="1" fill="#1F3D2B"/><rect x="4" y="2" width="1" height="1" fill="#1F3D2B"/><rect x="6" y="2" width="1" height="1" fill="#1F3D2B"/><rect x="9" y="2" width="1" height="1" fill="#1F3D2B"/><rect x="10" y="2" width="1" height="1" fill="#1F3D2B"/><rect x="11" y="2" width="1" height="1" fill="#1F3D2B"/><rect x="12" y="2" width="1" height="1" fill="#1F3D2B"/><rect x="14" y="2" width="1" height="1" fill="#1F3D2B"/><rect x="15" y="2" width="1" height="1" fill="#1F3D2B"/><rect x="17" y="2" width="1" height="1" fill="#1F3D2B"/><rect x="19" y="2" width="1" height="1" fill="#1F3D2B"/><rect x="22" y="2" width="1" height="1" fill="#1F3D2B"/><rect x="26" y="2" width="1" height="1" fill="#1F3D2B"/><rect x="28" y="2" width="1" height="1" fill="#1F3D2B"/><rect x="29" y="2" width="1" height="1" fill="#1F3D2B"/><rect x="30" y="2" width="1" height="1" fill="#1F3D2B"/><rect x="32" y="2" width="1" height="1" fill="#1F3D2B"/>
+          <rect x="0" y="3" width="1" height="1" fill="#1F3D2B"/><rect x="2" y="3" width="1" height="1" fill="#1F3D2B"/><rect x="3" y="3" width="1" height="1" fill="#1F3D2B"/><rect x="4" y="3" width="1" height="1" fill="#1F3D2B"/><rect x="6" y="3" width="1" height="1" fill="#1F3D2B"/><rect x="9" y="3" width="1" height="1" fill="#1F3D2B"/><rect x="11" y="3" width="1" height="1" fill="#1F3D2B"/><rect x="15" y="3" width="1" height="1" fill="#1F3D2B"/><rect x="16" y="3" width="1" height="1" fill="#1F3D2B"/><rect x="17" y="3" width="1" height="1" fill="#1F3D2B"/><rect x="20" y="3" width="1" height="1" fill="#1F3D2B"/><rect x="23" y="3" width="1" height="1" fill="#1F3D2B"/><rect x="26" y="3" width="1" height="1" fill="#1F3D2B"/><rect x="28" y="3" width="1" height="1" fill="#1F3D2B"/><rect x="29" y="3" width="1" height="1" fill="#1F3D2B"/><rect x="30" y="3" width="1" height="1" fill="#1F3D2B"/><rect x="32" y="3" width="1" height="1" fill="#1F3D2B"/>
+          <rect x="0" y="4" width="1" height="1" fill="#1F3D2B"/><rect x="2" y="4" width="1" height="1" fill="#1F3D2B"/><rect x="3" y="4" width="1" height="1" fill="#1F3D2B"/><rect x="4" y="4" width="1" height="1" fill="#1F3D2B"/><rect x="6" y="4" width="1" height="1" fill="#1F3D2B"/><rect x="8" y="4" width="1" height="1" fill="#1F3D2B"/><rect x="9" y="4" width="1" height="1" fill="#1F3D2B"/><rect x="10" y="4" width="1" height="1" fill="#1F3D2B"/><rect x="11" y="4" width="1" height="1" fill="#1F3D2B"/><rect x="12" y="4" width="1" height="1" fill="#1F3D2B"/><rect x="13" y="4" width="1" height="1" fill="#1F3D2B"/><rect x="14" y="4" width="1" height="1" fill="#1F3D2B"/><rect x="15" y="4" width="1" height="1" fill="#1F3D2B"/><rect x="16" y="4" width="1" height="1" fill="#1F3D2B"/><rect x="17" y="4" width="1" height="1" fill="#1F3D2B"/><rect x="21" y="4" width="1" height="1" fill="#1F3D2B"/><rect x="26" y="4" width="1" height="1" fill="#1F3D2B"/><rect x="28" y="4" width="1" height="1" fill="#1F3D2B"/><rect x="29" y="4" width="1" height="1" fill="#1F3D2B"/><rect x="30" y="4" width="1" height="1" fill="#1F3D2B"/><rect x="32" y="4" width="1" height="1" fill="#1F3D2B"/>
+          <rect x="0" y="5" width="1" height="1" fill="#1F3D2B"/><rect x="6" y="5" width="1" height="1" fill="#1F3D2B"/><rect x="8" y="5" width="1" height="1" fill="#1F3D2B"/><rect x="10" y="5" width="1" height="1" fill="#1F3D2B"/><rect x="12" y="5" width="1" height="1" fill="#1F3D2B"/><rect x="13" y="5" width="1" height="1" fill="#1F3D2B"/><rect x="14" y="5" width="1" height="1" fill="#1F3D2B"/><rect x="18" y="5" width="1" height="1" fill="#1F3D2B"/><rect x="20" y="5" width="1" height="1" fill="#1F3D2B"/><rect x="22" y="5" width="1" height="1" fill="#1F3D2B"/><rect x="26" y="5" width="1" height="1" fill="#1F3D2B"/><rect x="32" y="5" width="1" height="1" fill="#1F3D2B"/>
+          <rect x="0" y="6" width="1" height="1" fill="#1F3D2B"/><rect x="1" y="6" width="1" height="1" fill="#1F3D2B"/><rect x="2" y="6" width="1" height="1" fill="#1F3D2B"/><rect x="3" y="6" width="1" height="1" fill="#1F3D2B"/><rect x="4" y="6" width="1" height="1" fill="#1F3D2B"/><rect x="5" y="6" width="1" height="1" fill="#1F3D2B"/><rect x="6" y="6" width="1" height="1" fill="#1F3D2B"/><rect x="8" y="6" width="1" height="1" fill="#1F3D2B"/><rect x="10" y="6" width="1" height="1" fill="#1F3D2B"/><rect x="12" y="6" width="1" height="1" fill="#1F3D2B"/><rect x="14" y="6" width="1" height="1" fill="#1F3D2B"/><rect x="16" y="6" width="1" height="1" fill="#1F3D2B"/><rect x="18" y="6" width="1" height="1" fill="#1F3D2B"/><rect x="20" y="6" width="1" height="1" fill="#1F3D2B"/><rect x="22" y="6" width="1" height="1" fill="#1F3D2B"/><rect x="24" y="6" width="1" height="1" fill="#1F3D2B"/><rect x="26" y="6" width="1" height="1" fill="#1F3D2B"/><rect x="27" y="6" width="1" height="1" fill="#1F3D2B"/><rect x="28" y="6" width="1" height="1" fill="#1F3D2B"/><rect x="29" y="6" width="1" height="1" fill="#1F3D2B"/><rect x="30" y="6" width="1" height="1" fill="#1F3D2B"/><rect x="31" y="6" width="1" height="1" fill="#1F3D2B"/><rect x="32" y="6" width="1" height="1" fill="#1F3D2B"/>
+          <rect x="8" y="7" width="1" height="1" fill="#1F3D2B"/><rect x="10" y="7" width="1" height="1" fill="#1F3D2B"/><rect x="11" y="7" width="1" height="1" fill="#1F3D2B"/><rect x="12" y="7" width="1" height="1" fill="#1F3D2B"/><rect x="13" y="7" width="1" height="1" fill="#1F3D2B"/><rect x="15" y="7" width="1" height="1" fill="#1F3D2B"/><rect x="16" y="7" width="1" height="1" fill="#1F3D2B"/><rect x="17" y="7" width="1" height="1" fill="#1F3D2B"/><rect x="20" y="7" width="1" height="1" fill="#1F3D2B"/><rect x="21" y="7" width="1" height="1" fill="#1F3D2B"/><rect x="23" y="7" width="1" height="1" fill="#1F3D2B"/>
+          <rect x="0" y="8" width="1" height="1" fill="#1F3D2B"/><rect x="1" y="8" width="1" height="1" fill="#1F3D2B"/><rect x="2" y="8" width="1" height="1" fill="#1F3D2B"/><rect x="5" y="8" width="1" height="1" fill="#1F3D2B"/><rect x="8" y="8" width="1" height="1" fill="#1F3D2B"/><rect x="9" y="8" width="1" height="1" fill="#1F3D2B"/><rect x="13" y="8" width="1" height="1" fill="#1F3D2B"/><rect x="15" y="8" width="1" height="1" fill="#1F3D2B"/><rect x="16" y="8" width="1" height="1" fill="#1F3D2B"/><rect x="17" y="8" width="1" height="1" fill="#1F3D2B"/><rect x="18" y="8" width="1" height="1" fill="#1F3D2B"/><rect x="19" y="8" width="1" height="1" fill="#1F3D2B"/><rect x="21" y="8" width="1" height="1" fill="#1F3D2B"/><rect x="22" y="8" width="1" height="1" fill="#1F3D2B"/><rect x="23" y="8" width="1" height="1" fill="#1F3D2B"/><rect x="24" y="8" width="1" height="1" fill="#1F3D2B"/>
+          <rect x="0" y="9" width="1" height="1" fill="#1F3D2B"/><rect x="5" y="9" width="1" height="1" fill="#1F3D2B"/><rect x="8" y="9" width="1" height="1" fill="#1F3D2B"/><rect x="9" y="9" width="1" height="1" fill="#1F3D2B"/><rect x="10" y="9" width="1" height="1" fill="#1F3D2B"/><rect x="11" y="9" width="1" height="1" fill="#1F3D2B"/><rect x="13" y="9" width="1" height="1" fill="#1F3D2B"/><rect x="14" y="9" width="1" height="1" fill="#1F3D2B"/><rect x="16" y="9" width="1" height="1" fill="#1F3D2B"/><rect x="17" y="9" width="1" height="1" fill="#1F3D2B"/><rect x="18" y="9" width="1" height="1" fill="#1F3D2B"/><rect x="19" y="9" width="1" height="1" fill="#1F3D2B"/><rect x="20" y="9" width="1" height="1" fill="#1F3D2B"/><rect x="22" y="9" width="1" height="1" fill="#1F3D2B"/><rect x="23" y="9" width="1" height="1" fill="#1F3D2B"/><rect x="24" y="9" width="1" height="1" fill="#1F3D2B"/>
+          <rect x="1" y="10" width="1" height="1" fill="#1F3D2B"/><rect x="2" y="10" width="1" height="1" fill="#1F3D2B"/><rect x="4" y="10" width="1" height="1" fill="#1F3D2B"/><rect x="5" y="10" width="1" height="1" fill="#1F3D2B"/><rect x="8" y="10" width="1" height="1" fill="#1F3D2B"/><rect x="9" y="10" width="1" height="1" fill="#1F3D2B"/><rect x="10" y="10" width="1" height="1" fill="#1F3D2B"/><rect x="12" y="10" width="1" height="1" fill="#1F3D2B"/><rect x="13" y="10" width="1" height="1" fill="#1F3D2B"/><rect x="14" y="10" width="1" height="1" fill="#1F3D2B"/><rect x="15" y="10" width="1" height="1" fill="#1F3D2B"/><rect x="16" y="10" width="1" height="1" fill="#1F3D2B"/><rect x="18" y="10" width="1" height="1" fill="#1F3D2B"/><rect x="20" y="10" width="1" height="1" fill="#1F3D2B"/><rect x="21" y="10" width="1" height="1" fill="#1F3D2B"/><rect x="22" y="10" width="1" height="1" fill="#1F3D2B"/><rect x="24" y="10" width="1" height="1" fill="#1F3D2B"/>
+          <rect x="1" y="11" width="1" height="1" fill="#1F3D2B"/><rect x="2" y="11" width="1" height="1" fill="#1F3D2B"/><rect x="3" y="11" width="1" height="1" fill="#1F3D2B"/><rect x="4" y="11" width="1" height="1" fill="#1F3D2B"/><rect x="5" y="11" width="1" height="1" fill="#1F3D2B"/><rect x="9" y="11" width="1" height="1" fill="#1F3D2B"/><rect x="10" y="11" width="1" height="1" fill="#1F3D2B"/><rect x="11" y="11" width="1" height="1" fill="#1F3D2B"/><rect x="12" y="11" width="1" height="1" fill="#1F3D2B"/><rect x="13" y="11" width="1" height="1" fill="#1F3D2B"/><rect x="14" y="11" width="1" height="1" fill="#1F3D2B"/><rect x="17" y="11" width="1" height="1" fill="#1F3D2B"/><rect x="19" y="11" width="1" height="1" fill="#1F3D2B"/><rect x="22" y="11" width="1" height="1" fill="#1F3D2B"/><rect x="24" y="11" width="1" height="1" fill="#1F3D2B"/>
+          <rect x="0" y="12" width="1" height="1" fill="#1F3D2B"/><rect x="1" y="12" width="1" height="1" fill="#1F3D2B"/><rect x="3" y="12" width="1" height="1" fill="#1F3D2B"/><rect x="4" y="12" width="1" height="1" fill="#1F3D2B"/><rect x="8" y="12" width="1" height="1" fill="#1F3D2B"/><rect x="9" y="12" width="1" height="1" fill="#1F3D2B"/><rect x="10" y="12" width="1" height="1" fill="#1F3D2B"/><rect x="12" y="12" width="1" height="1" fill="#1F3D2B"/><rect x="13" y="12" width="1" height="1" fill="#1F3D2B"/><rect x="14" y="12" width="1" height="1" fill="#1F3D2B"/><rect x="16" y="12" width="1" height="1" fill="#1F3D2B"/><rect x="17" y="12" width="1" height="1" fill="#1F3D2B"/><rect x="18" y="12" width="1" height="1" fill="#1F3D2B"/><rect x="19" y="12" width="1" height="1" fill="#1F3D2B"/><rect x="21" y="12" width="1" height="1" fill="#1F3D2B"/><rect x="24" y="12" width="1" height="1" fill="#1F3D2B"/>
+          <rect x="1" y="13" width="1" height="1" fill="#1F3D2B"/><rect x="2" y="13" width="1" height="1" fill="#1F3D2B"/><rect x="3" y="13" width="1" height="1" fill="#1F3D2B"/><rect x="5" y="13" width="1" height="1" fill="#1F3D2B"/><rect x="8" y="13" width="1" height="1" fill="#1F3D2B"/><rect x="10" y="13" width="1" height="1" fill="#1F3D2B"/><rect x="11" y="13" width="1" height="1" fill="#1F3D2B"/><rect x="14" y="13" width="1" height="1" fill="#1F3D2B"/><rect x="16" y="13" width="1" height="1" fill="#1F3D2B"/><rect x="17" y="13" width="1" height="1" fill="#1F3D2B"/><rect x="18" y="13" width="1" height="1" fill="#1F3D2B"/><rect x="19" y="13" width="1" height="1" fill="#1F3D2B"/><rect x="20" y="13" width="1" height="1" fill="#1F3D2B"/><rect x="22" y="13" width="1" height="1" fill="#1F3D2B"/><rect x="23" y="13" width="1" height="1" fill="#1F3D2B"/><rect x="24" y="13" width="1" height="1" fill="#1F3D2B"/>
+          <rect x="0" y="14" width="1" height="1" fill="#1F3D2B"/><rect x="2" y="14" width="1" height="1" fill="#1F3D2B"/><rect x="3" y="14" width="1" height="1" fill="#1F3D2B"/><rect x="4" y="14" width="1" height="1" fill="#1F3D2B"/><rect x="8" y="14" width="1" height="1" fill="#1F3D2B"/><rect x="10" y="14" width="1" height="1" fill="#1F3D2B"/><rect x="11" y="14" width="1" height="1" fill="#1F3D2B"/><rect x="12" y="14" width="1" height="1" fill="#1F3D2B"/><rect x="15" y="14" width="1" height="1" fill="#1F3D2B"/><rect x="16" y="14" width="1" height="1" fill="#1F3D2B"/><rect x="18" y="14" width="1" height="1" fill="#1F3D2B"/><rect x="20" y="14" width="1" height="1" fill="#1F3D2B"/><rect x="21" y="14" width="1" height="1" fill="#1F3D2B"/><rect x="24" y="14" width="1" height="1" fill="#1F3D2B"/>
+          <rect x="0" y="15" width="1" height="1" fill="#1F3D2B"/><rect x="1" y="15" width="1" height="1" fill="#1F3D2B"/><rect x="2" y="15" width="1" height="1" fill="#1F3D2B"/><rect x="3" y="15" width="1" height="1" fill="#1F3D2B"/><rect x="4" y="15" width="1" height="1" fill="#1F3D2B"/><rect x="5" y="15" width="1" height="1" fill="#1F3D2B"/><rect x="9" y="15" width="1" height="1" fill="#1F3D2B"/><rect x="11" y="15" width="1" height="1" fill="#1F3D2B"/><rect x="13" y="15" width="1" height="1" fill="#1F3D2B"/><rect x="15" y="15" width="1" height="1" fill="#1F3D2B"/><rect x="17" y="15" width="1" height="1" fill="#1F3D2B"/><rect x="20" y="15" width="1" height="1" fill="#1F3D2B"/><rect x="21" y="15" width="1" height="1" fill="#1F3D2B"/><rect x="22" y="15" width="1" height="1" fill="#1F3D2B"/><rect x="23" y="15" width="1" height="1" fill="#1F3D2B"/><rect x="24" y="15" width="1" height="1" fill="#1F3D2B"/>
+          <rect x="0" y="16" width="1" height="1" fill="#1F3D2B"/><rect x="2" y="16" width="1" height="1" fill="#1F3D2B"/><rect x="3" y="16" width="1" height="1" fill="#1F3D2B"/><rect x="5" y="16" width="1" height="1" fill="#1F3D2B"/><rect x="8" y="16" width="1" height="1" fill="#1F3D2B"/><rect x="10" y="16" width="1" height="1" fill="#1F3D2B"/><rect x="12" y="16" width="1" height="1" fill="#1F3D2B"/><rect x="13" y="16" width="1" height="1" fill="#1F3D2B"/><rect x="14" y="16" width="1" height="1" fill="#1F3D2B"/><rect x="17" y="16" width="1" height="1" fill="#1F3D2B"/><rect x="19" y="16" width="1" height="1" fill="#1F3D2B"/><rect x="20" y="16" width="1" height="1" fill="#1F3D2B"/><rect x="21" y="16" width="1" height="1" fill="#1F3D2B"/><rect x="23" y="16" width="1" height="1" fill="#1F3D2B"/>
+          <rect x="2" y="17" width="1" height="1" fill="#1F3D2B"/><rect x="4" y="17" width="1" height="1" fill="#1F3D2B"/><rect x="5" y="17" width="1" height="1" fill="#1F3D2B"/><rect x="9" y="17" width="1" height="1" fill="#1F3D2B"/><rect x="10" y="17" width="1" height="1" fill="#1F3D2B"/><rect x="12" y="17" width="1" height="1" fill="#1F3D2B"/><rect x="13" y="17" width="1" height="1" fill="#1F3D2B"/><rect x="14" y="17" width="1" height="1" fill="#1F3D2B"/><rect x="15" y="17" width="1" height="1" fill="#1F3D2B"/><rect x="16" y="17" width="1" height="1" fill="#1F3D2B"/><rect x="17" y="17" width="1" height="1" fill="#1F3D2B"/><rect x="19" y="17" width="1" height="1" fill="#1F3D2B"/><rect x="20" y="17" width="1" height="1" fill="#1F3D2B"/><rect x="21" y="17" width="1" height="1" fill="#1F3D2B"/><rect x="23" y="17" width="1" height="1" fill="#1F3D2B"/><rect x="24" y="17" width="1" height="1" fill="#1F3D2B"/>
+          <rect x="1" y="18" width="1" height="1" fill="#1F3D2B"/><rect x="2" y="18" width="1" height="1" fill="#1F3D2B"/><rect x="4" y="18" width="1" height="1" fill="#1F3D2B"/><rect x="8" y="18" width="1" height="1" fill="#1F3D2B"/><rect x="10" y="18" width="1" height="1" fill="#1F3D2B"/><rect x="11" y="18" width="1" height="1" fill="#1F3D2B"/><rect x="12" y="18" width="1" height="1" fill="#1F3D2B"/><rect x="13" y="18" width="1" height="1" fill="#1F3D2B"/><rect x="14" y="18" width="1" height="1" fill="#1F3D2B"/><rect x="17" y="18" width="1" height="1" fill="#1F3D2B"/><rect x="19" y="18" width="1" height="1" fill="#1F3D2B"/><rect x="20" y="18" width="1" height="1" fill="#1F3D2B"/><rect x="21" y="18" width="1" height="1" fill="#1F3D2B"/><rect x="22" y="18" width="1" height="1" fill="#1F3D2B"/><rect x="23" y="18" width="1" height="1" fill="#1F3D2B"/>
+          <rect x="0" y="19" width="1" height="1" fill="#1F3D2B"/><rect x="1" y="19" width="1" height="1" fill="#1F3D2B"/><rect x="2" y="19" width="1" height="1" fill="#1F3D2B"/><rect x="3" y="19" width="1" height="1" fill="#1F3D2B"/><rect x="4" y="19" width="1" height="1" fill="#1F3D2B"/><rect x="8" y="19" width="1" height="1" fill="#1F3D2B"/><rect x="9" y="19" width="1" height="1" fill="#1F3D2B"/><rect x="12" y="19" width="1" height="1" fill="#1F3D2B"/><rect x="14" y="19" width="1" height="1" fill="#1F3D2B"/><rect x="15" y="19" width="1" height="1" fill="#1F3D2B"/><rect x="17" y="19" width="1" height="1" fill="#1F3D2B"/><rect x="18" y="19" width="1" height="1" fill="#1F3D2B"/><rect x="20" y="19" width="1" height="1" fill="#1F3D2B"/><rect x="21" y="19" width="1" height="1" fill="#1F3D2B"/><rect x="22" y="19" width="1" height="1" fill="#1F3D2B"/>
+          <rect x="1" y="20" width="1" height="1" fill="#1F3D2B"/><rect x="2" y="20" width="1" height="1" fill="#1F3D2B"/><rect x="4" y="20" width="1" height="1" fill="#1F3D2B"/><rect x="5" y="20" width="1" height="1" fill="#1F3D2B"/><rect x="8" y="20" width="1" height="1" fill="#1F3D2B"/><rect x="10" y="20" width="1" height="1" fill="#1F3D2B"/><rect x="12" y="20" width="1" height="1" fill="#1F3D2B"/><rect x="13" y="20" width="1" height="1" fill="#1F3D2B"/><rect x="14" y="20" width="1" height="1" fill="#1F3D2B"/><rect x="15" y="20" width="1" height="1" fill="#1F3D2B"/><rect x="17" y="20" width="1" height="1" fill="#1F3D2B"/><rect x="18" y="20" width="1" height="1" fill="#1F3D2B"/><rect x="21" y="20" width="1" height="1" fill="#1F3D2B"/><rect x="22" y="20" width="1" height="1" fill="#1F3D2B"/>
+          <rect x="0" y="21" width="1" height="1" fill="#1F3D2B"/><rect x="2" y="21" width="1" height="1" fill="#1F3D2B"/><rect x="5" y="21" width="1" height="1" fill="#1F3D2B"/><rect x="9" y="21" width="1" height="1" fill="#1F3D2B"/><rect x="10" y="21" width="1" height="1" fill="#1F3D2B"/><rect x="11" y="21" width="1" height="1" fill="#1F3D2B"/><rect x="12" y="21" width="1" height="1" fill="#1F3D2B"/><rect x="13" y="21" width="1" height="1" fill="#1F3D2B"/><rect x="14" y="21" width="1" height="1" fill="#1F3D2B"/><rect x="15" y="21" width="1" height="1" fill="#1F3D2B"/><rect x="16" y="21" width="1" height="1" fill="#1F3D2B"/><rect x="18" y="21" width="1" height="1" fill="#1F3D2B"/><rect x="20" y="21" width="1" height="1" fill="#1F3D2B"/><rect x="21" y="21" width="1" height="1" fill="#1F3D2B"/><rect x="22" y="21" width="1" height="1" fill="#1F3D2B"/><rect x="23" y="21" width="1" height="1" fill="#1F3D2B"/><rect x="24" y="21" width="1" height="1" fill="#1F3D2B"/>
+          <rect x="0" y="22" width="1" height="1" fill="#1F3D2B"/><rect x="1" y="22" width="1" height="1" fill="#1F3D2B"/><rect x="3" y="22" width="1" height="1" fill="#1F3D2B"/><rect x="4" y="22" width="1" height="1" fill="#1F3D2B"/><rect x="8" y="22" width="1" height="1" fill="#1F3D2B"/><rect x="9" y="22" width="1" height="1" fill="#1F3D2B"/><rect x="10" y="22" width="1" height="1" fill="#1F3D2B"/><rect x="11" y="22" width="1" height="1" fill="#1F3D2B"/><rect x="12" y="22" width="1" height="1" fill="#1F3D2B"/><rect x="13" y="22" width="1" height="1" fill="#1F3D2B"/><rect x="14" y="22" width="1" height="1" fill="#1F3D2B"/><rect x="18" y="22" width="1" height="1" fill="#1F3D2B"/><rect x="19" y="22" width="1" height="1" fill="#1F3D2B"/><rect x="20" y="22" width="1" height="1" fill="#1F3D2B"/><rect x="22" y="22" width="1" height="1" fill="#1F3D2B"/><rect x="24" y="22" width="1" height="1" fill="#1F3D2B"/>
+          <rect x="0" y="23" width="1" height="1" fill="#1F3D2B"/><rect x="3" y="23" width="1" height="1" fill="#1F3D2B"/><rect x="4" y="23" width="1" height="1" fill="#1F3D2B"/><rect x="8" y="23" width="1" height="1" fill="#1F3D2B"/><rect x="10" y="23" width="1" height="1" fill="#1F3D2B"/><rect x="12" y="23" width="1" height="1" fill="#1F3D2B"/><rect x="13" y="23" width="1" height="1" fill="#1F3D2B"/><rect x="14" y="23" width="1" height="1" fill="#1F3D2B"/><rect x="15" y="23" width="1" height="1" fill="#1F3D2B"/><rect x="16" y="23" width="1" height="1" fill="#1F3D2B"/><rect x="17" y="23" width="1" height="1" fill="#1F3D2B"/><rect x="20" y="23" width="1" height="1" fill="#1F3D2B"/><rect x="21" y="23" width="1" height="1" fill="#1F3D2B"/><rect x="24" y="23" width="1" height="1" fill="#1F3D2B"/>
+          <rect x="8" y="24" width="1" height="1" fill="#1F3D2B"/><rect x="9" y="24" width="1" height="1" fill="#1F3D2B"/><rect x="11" y="24" width="1" height="1" fill="#1F3D2B"/><rect x="12" y="24" width="1" height="1" fill="#1F3D2B"/><rect x="13" y="24" width="1" height="1" fill="#1F3D2B"/><rect x="14" y="24" width="1" height="1" fill="#1F3D2B"/><rect x="17" y="24" width="1" height="1" fill="#1F3D2B"/><rect x="18" y="24" width="1" height="1" fill="#1F3D2B"/><rect x="19" y="24" width="1" height="1" fill="#1F3D2B"/><rect x="20" y="24" width="1" height="1" fill="#1F3D2B"/><rect x="23" y="24" width="1" height="1" fill="#1F3D2B"/>
+          <rect x="0" y="25" width="1" height="1" fill="#1F3D2B"/><rect x="1" y="25" width="1" height="1" fill="#1F3D2B"/><rect x="2" y="25" width="1" height="1" fill="#1F3D2B"/><rect x="3" y="25" width="1" height="1" fill="#1F3D2B"/><rect x="4" y="25" width="1" height="1" fill="#1F3D2B"/><rect x="5" y="25" width="1" height="1" fill="#1F3D2B"/><rect x="6" y="25" width="1" height="1" fill="#1F3D2B"/><rect x="8" y="25" width="1" height="1" fill="#1F3D2B"/><rect x="10" y="25" width="1" height="1" fill="#1F3D2B"/><rect x="12" y="25" width="1" height="1" fill="#1F3D2B"/><rect x="13" y="25" width="1" height="1" fill="#1F3D2B"/><rect x="15" y="25" width="1" height="1" fill="#1F3D2B"/><rect x="16" y="25" width="1" height="1" fill="#1F3D2B"/><rect x="18" y="25" width="1" height="1" fill="#1F3D2B"/><rect x="19" y="25" width="1" height="1" fill="#1F3D2B"/><rect x="20" y="25" width="1" height="1" fill="#1F3D2B"/><rect x="21" y="25" width="1" height="1" fill="#1F3D2B"/><rect x="22" y="25" width="1" height="1" fill="#1F3D2B"/><rect x="23" y="25" width="1" height="1" fill="#1F3D2B"/>
+          <rect x="0" y="26" width="1" height="1" fill="#1F3D2B"/><rect x="6" y="26" width="1" height="1" fill="#1F3D2B"/><rect x="8" y="26" width="1" height="1" fill="#1F3D2B"/><rect x="9" y="26" width="1" height="1" fill="#1F3D2B"/><rect x="10" y="26" width="1" height="1" fill="#1F3D2B"/><rect x="12" y="26" width="1" height="1" fill="#1F3D2B"/><rect x="14" y="26" width="1" height="1" fill="#1F3D2B"/><rect x="15" y="26" width="1" height="1" fill="#1F3D2B"/><rect x="16" y="26" width="1" height="1" fill="#1F3D2B"/><rect x="17" y="26" width="1" height="1" fill="#1F3D2B"/><rect x="18" y="26" width="1" height="1" fill="#1F3D2B"/><rect x="19" y="26" width="1" height="1" fill="#1F3D2B"/><rect x="22" y="26" width="1" height="1" fill="#1F3D2B"/><rect x="23" y="26" width="1" height="1" fill="#1F3D2B"/>
+          <rect x="0" y="27" width="1" height="1" fill="#1F3D2B"/><rect x="2" y="27" width="1" height="1" fill="#1F3D2B"/><rect x="3" y="27" width="1" height="1" fill="#1F3D2B"/><rect x="4" y="27" width="1" height="1" fill="#1F3D2B"/><rect x="6" y="27" width="1" height="1" fill="#1F3D2B"/><rect x="10" y="27" width="1" height="1" fill="#1F3D2B"/><rect x="11" y="27" width="1" height="1" fill="#1F3D2B"/><rect x="12" y="27" width="1" height="1" fill="#1F3D2B"/><rect x="13" y="27" width="1" height="1" fill="#1F3D2B"/><rect x="14" y="27" width="1" height="1" fill="#1F3D2B"/><rect x="15" y="27" width="1" height="1" fill="#1F3D2B"/><rect x="16" y="27" width="1" height="1" fill="#1F3D2B"/><rect x="20" y="27" width="1" height="1" fill="#1F3D2B"/><rect x="21" y="27" width="1" height="1" fill="#1F3D2B"/><rect x="22" y="27" width="1" height="1" fill="#1F3D2B"/><rect x="23" y="27" width="1" height="1" fill="#1F3D2B"/><rect x="24" y="27" width="1" height="1" fill="#1F3D2B"/>
+          <rect x="0" y="28" width="1" height="1" fill="#1F3D2B"/><rect x="2" y="28" width="1" height="1" fill="#1F3D2B"/><rect x="3" y="28" width="1" height="1" fill="#1F3D2B"/><rect x="4" y="28" width="1" height="1" fill="#1F3D2B"/><rect x="6" y="28" width="1" height="1" fill="#1F3D2B"/><rect x="8" y="28" width="1" height="1" fill="#1F3D2B"/><rect x="9" y="28" width="1" height="1" fill="#1F3D2B"/><rect x="11" y="28" width="1" height="1" fill="#1F3D2B"/><rect x="12" y="28" width="1" height="1" fill="#1F3D2B"/><rect x="13" y="28" width="1" height="1" fill="#1F3D2B"/><rect x="14" y="28" width="1" height="1" fill="#1F3D2B"/><rect x="16" y="28" width="1" height="1" fill="#1F3D2B"/><rect x="18" y="28" width="1" height="1" fill="#1F3D2B"/><rect x="19" y="28" width="1" height="1" fill="#1F3D2B"/><rect x="20" y="28" width="1" height="1" fill="#1F3D2B"/><rect x="21" y="28" width="1" height="1" fill="#1F3D2B"/><rect x="23" y="28" width="1" height="1" fill="#1F3D2B"/>
+          <rect x="0" y="29" width="1" height="1" fill="#1F3D2B"/><rect x="2" y="29" width="1" height="1" fill="#1F3D2B"/><rect x="3" y="29" width="1" height="1" fill="#1F3D2B"/><rect x="4" y="29" width="1" height="1" fill="#1F3D2B"/><rect x="6" y="29" width="1" height="1" fill="#1F3D2B"/><rect x="9" y="29" width="1" height="1" fill="#1F3D2B"/><rect x="10" y="29" width="1" height="1" fill="#1F3D2B"/><rect x="11" y="29" width="1" height="1" fill="#1F3D2B"/><rect x="13" y="29" width="1" height="1" fill="#1F3D2B"/><rect x="14" y="29" width="1" height="1" fill="#1F3D2B"/><rect x="15" y="29" width="1" height="1" fill="#1F3D2B"/><rect x="16" y="29" width="1" height="1" fill="#1F3D2B"/><rect x="17" y="29" width="1" height="1" fill="#1F3D2B"/><rect x="18" y="29" width="1" height="1" fill="#1F3D2B"/><rect x="20" y="29" width="1" height="1" fill="#1F3D2B"/><rect x="21" y="29" width="1" height="1" fill="#1F3D2B"/><rect x="22" y="29" width="1" height="1" fill="#1F3D2B"/><rect x="23" y="29" width="1" height="1" fill="#1F3D2B"/>
+          <rect x="0" y="30" width="1" height="1" fill="#1F3D2B"/><rect x="6" y="30" width="1" height="1" fill="#1F3D2B"/><rect x="9" y="30" width="1" height="1" fill="#1F3D2B"/><rect x="10" y="30" width="1" height="1" fill="#1F3D2B"/><rect x="11" y="30" width="1" height="1" fill="#1F3D2B"/><rect x="13" y="30" width="1" height="1" fill="#1F3D2B"/><rect x="15" y="30" width="1" height="1" fill="#1F3D2B"/><rect x="16" y="30" width="1" height="1" fill="#1F3D2B"/><rect x="17" y="30" width="1" height="1" fill="#1F3D2B"/><rect x="18" y="30" width="1" height="1" fill="#1F3D2B"/><rect x="19" y="30" width="1" height="1" fill="#1F3D2B"/><rect x="21" y="30" width="1" height="1" fill="#1F3D2B"/><rect x="22" y="30" width="1" height="1" fill="#1F3D2B"/><rect x="23" y="30" width="1" height="1" fill="#1F3D2B"/><rect x="24" y="30" width="1" height="1" fill="#1F3D2B"/>
+          <rect x="0" y="31" width="1" height="1" fill="#1F3D2B"/><rect x="1" y="31" width="1" height="1" fill="#1F3D2B"/><rect x="2" y="31" width="1" height="1" fill="#1F3D2B"/><rect x="3" y="31" width="1" height="1" fill="#1F3D2B"/><rect x="4" y="31" width="1" height="1" fill="#1F3D2B"/><rect x="5" y="31" width="1" height="1" fill="#1F3D2B"/><rect x="6" y="31" width="1" height="1" fill="#1F3D2B"/><rect x="8" y="31" width="1" height="1" fill="#1F3D2B"/><rect x="10" y="31" width="1" height="1" fill="#1F3D2B"/><rect x="12" y="31" width="1" height="1" fill="#1F3D2B"/><rect x="13" y="31" width="1" height="1" fill="#1F3D2B"/><rect x="14" y="31" width="1" height="1" fill="#1F3D2B"/><rect x="15" y="31" width="1" height="1" fill="#1F3D2B"/><rect x="17" y="31" width="1" height="1" fill="#1F3D2B"/><rect x="19" y="31" width="1" height="1" fill="#1F3D2B"/><rect x="22" y="31" width="1" height="1" fill="#1F3D2B"/>
+          <rect x="0" y="32" width="1" height="1" fill="#1F3D2B"/><rect x="1" y="32" width="1" height="1" fill="#1F3D2B"/><rect x="2" y="32" width="1" height="1" fill="#1F3D2B"/><rect x="3" y="32" width="1" height="1" fill="#1F3D2B"/><rect x="4" y="32" width="1" height="1" fill="#1F3D2B"/><rect x="5" y="32" width="1" height="1" fill="#1F3D2B"/><rect x="6" y="32" width="1" height="1" fill="#1F3D2B"/><rect x="8" y="32" width="1" height="1" fill="#1F3D2B"/><rect x="9" y="32" width="1" height="1" fill="#1F3D2B"/><rect x="11" y="32" width="1" height="1" fill="#1F3D2B"/><rect x="12" y="32" width="1" height="1" fill="#1F3D2B"/><rect x="13" y="32" width="1" height="1" fill="#1F3D2B"/><rect x="15" y="32" width="1" height="1" fill="#1F3D2B"/><rect x="17" y="32" width="1" height="1" fill="#1F3D2B"/><rect x="18" y="32" width="1" height="1" fill="#1F3D2B"/><rect x="19" y="32" width="1" height="1" fill="#1F3D2B"/><rect x="20" y="32" width="1" height="1" fill="#1F3D2B"/><rect x="22" y="32" width="1" height="1" fill="#1F3D2B"/><rect x="23" y="32" width="1" height="1" fill="#1F3D2B"/>
+        </svg>
+        <p style="margin-top: 12px; font-size: 0.875rem; color: var(--text-muted);">
+          <strong>Certificate ID:</strong> BV-2024-001
+        </p>
+      </div>
+
+      <dl class="cert-details">
+        <dt>Student Name</dt>
+        <dd>Sayali Jogi</dd>
+        <dt>Course</dt>
+        <dd>B.Tech Computer Science</dd>
+        <dt>Issue Date</dt>
+        <dd>2024-01-15</dd>
+        <dt>SHA-256 Hash</dt>
+        <dd>e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855</dd>
+      </dl>
+
+      <div class="info-box">
+        <p><strong>📱 Try it!</strong> Open your phone's camera app and scan the QR code above. It will take you directly to the verification page with this certificate's details pre-loaded.</p>
+      </div>
+    </div>
+
+    <!-- How It Works -->
+    <div class="card">
+      <h2>How QR Verification Works</h2>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h3>Certificate Issued</h3>
+            <p>Admin issues a certificate and generates its SHA-256 cryptographic hash</p>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h3>Blockchain Anchored</h3>
+            <p>Hash is permanently recorded on the immutable blockchain ledger</p>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h3>QR Code Generated</h3>
+            <p>A unique QR code is created containing the certificate ID and hash</p>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-number">4</div>
+          <div class="step-content">
+            <h3>Instant Verification</h3>
+            <p>Anyone can scan the QR code to verify the certificate's authenticity in seconds</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Features -->
+  <div class="card">
+    <h2>Why QR Code Verification?</h2>
+
+    <div class="feature-list">
+      <div class="feature">
+        <div class="feature-icon">✓</div>
+        <div>
+          <h3>Instant Authentication</h3>
+          <p>Verify any certificate in seconds with just a smartphone scan—no special app required</p>
+        </div>
+      </div>
+
+      <div class="feature">
+        <div class="feature-icon">✓</div>
+        <div>
+          <h3>Tamper-Proof</h3>
+          <p>QR codes contain the cryptographic hash—any document modification is immediately detectable</p>
+        </div>
+      </div>
+
+      <div class="feature">
+        <div class="feature-icon">✓</div>
+        <div>
+          <h3>Universal Access</h3>
+          <p>Employers, institutions, and recruiters worldwide can verify credentials instantly</p>
+        </div>
+      </div>
+
+      <div class="feature">
+        <div class="feature-icon">✓</div>
+        <div>
+          <h3>Blockchain-Backed</h3>
+          <p>Every verification checks against the immutable blockchain ledger, ensuring authenticity</p>
+        </div>
+      </div>
+
+      <div class="feature">
+        <div class="feature-icon">✓</div>
+        <div>
+          <h3>Privacy-Preserving</h3>
+          <p>Only certificate metadata is verified—personal details remain protected</p>
+        </div>
+      </div>
+
+      <div class="feature">
+        <div class="feature-icon">✓</div>
+        <div>
+          <h3>Future-Proof</h3>
+          <p>QR codes work on any device and will remain scannable for decades to come</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CTA -->
+  <div class="cta-box">
+    <h2>Ready to Experience BlockVault?</h2>
+    <p>See how blockchain-powered certificate verification works in your actual application. Log in to the admin panel to issue certificates with real, scannable QR codes.</p>
+    <a href="http://localhost:3000/login" class="button">
+      <span>Go to Admin Login →</span>
+    </a>
+  </div>
+</div>

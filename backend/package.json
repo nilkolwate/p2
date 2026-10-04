@@ -1,0 +1,31 @@
+{
+  "name": "blockvault-backend",
+  "version": "2.0.0",
+  "description": "BlockVault — Blockchain-Based Certificate Verification System (Unified Backend)",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "keywords": [
+    "blockchain",
+    "certificate",
+    "verification",
+    "sha256"
+  ],
+  "author": "BlockVault Team",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^10.0.14",
+    "pdfkit": "^0.20.2",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}
