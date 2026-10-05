@@ -1,6 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { Eye, Target, Cpu, ArrowRight } from 'lucide-react';
+import { Eye, Target, Cpu } from 'lucide-react';
 
 const features = [
   {
@@ -127,15 +126,9 @@ export default function About() {
             >
               Building a Trustworthy Digital Future
             </h2>
-            <p className="text-[#6B8F71] text-lg font-medium tracking-wide mb-8">
+            <p className="text-[#6B8F71] text-lg font-medium tracking-wide">
               Secure. Verify. Believe.
             </p>
-            <Link
-              to="/verify"
-              className="inline-flex items-center gap-2 px-8 py-3 rounded-full bg-white text-[#1F3D2B] font-semibold hover:bg-green-50 transition-colors shadow-sm"
-            >
-              Verify a Certificate <ArrowRight className="w-4 h-4" />
-            </Link>
           </div>
         </div>
       </section>

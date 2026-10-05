@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useSearchParams, useNavigate, useParams } from 'react-router-dom';
-import { CheckCircle, XCircle, Download, ExternalLink, ArrowLeft, Shield } from 'lucide-react';
+import { CheckCircle, XCircle, Download, ArrowLeft, Shield } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import apiService from '../services/api';
 
@@ -174,8 +174,8 @@ export default function VerificationResult() {
           </div>
 
           {/* Certificate Credentials Grid */}
-          <div className="grid md:grid-cols-2 gap-6 mb-8">
-            {/* Left: Certificate Details */}
+          <div className={isQRVerification ? "space-y-6 mb-8" : "grid md:grid-cols-2 gap-6 mb-8"}>
+            {/* Certificate Details */}
             <div className="bg-gray-50/80 rounded-xl p-5 border border-gray-200 divide-y divide-gray-200">
               <div className="py-2">
                 <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider block mb-0.5">
@@ -241,64 +241,78 @@ export default function VerificationResult() {
               </div>
             </div>
 
-            {/* Right: QR Code & Verification Stamp */}
-            <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-6 border-2 border-gray-200 flex flex-col items-center justify-center">
-              <p className="text-sm font-bold text-gray-900 mb-3 text-center">
-                Cryptographic Authentication QR
-              </p>
-              <div className="bg-white p-3 rounded-xl shadow-sm border-2 border-[#1F3D2B]">
-                {certificateData.qrDataUrl ? (
-                  <img
-                    src={certificateData.qrDataUrl}
-                    alt="Authentication QR"
-                    className="w-36 h-36 object-contain"
-                  />
-                ) : (
-                  <QRCodeSVG
-                    value={verificationUrl}
-                    size={140}
-                    level="H"
-                    includeMargin={false}
-                    fgColor="#1F3D2B"
-                  />
-                )}
+            {/* Right: QR Code & Verification Stamp (Only displayed if NOT already verified by QR) */}
+            {!isQRVerification && (
+              <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl p-6 border-2 border-gray-200 flex flex-col items-center justify-center">
+                <p className="text-sm font-bold text-gray-900 mb-3 text-center">
+                  Cryptographic Authentication QR
+                </p>
+                <div className="bg-white p-3 rounded-xl shadow-sm border-2 border-[#1F3D2B]">
+                  {certificateData.qrDataUrl ? (
+                    <img
+                      src={certificateData.qrDataUrl}
+                      alt="Authentication QR"
+                      className="w-36 h-36 object-contain"
+                    />
+                  ) : (
+                    <QRCodeSVG
+                      value={verificationUrl}
+                      size={140}
+                      level="H"
+                      includeMargin={false}
+                      fgColor="#1F3D2B"
+                    />
+                  )}
+                </div>
+                <p className="text-xs text-gray-500 mt-3 text-center max-w-[200px]">
+                  Scan to verify on any mobile device or browser
+                </p>
               </div>
-              <p className="text-xs text-gray-500 mt-3 text-center max-w-[200px]">
-                Scan to verify on any mobile device or browser
-              </p>
-            </div>
+            )}
           </div>
 
           {/* SHA-256 Hash Digest */}
-          {certificateData.sha256 && (
-            <div className="bg-gray-50 rounded-xl p-4 mb-8 border border-gray-200">
-              <span className="text-xs font-bold text-gray-500 uppercase block mb-1.5">
-                SHA-256 Cryptographic Hash Digest (Module 3)
-              </span>
-              <div className="bg-white p-3 rounded-lg border border-gray-200 font-mono text-xs text-gray-700 break-all">
-                {certificateData.sha256}
+          {activeResult?.uploadedHash && activeResult?.originalHash && activeResult.uploadedHash.toLowerCase() !== activeResult.originalHash.toLowerCase() ? (
+            <div className="bg-red-50/80 rounded-xl p-5 mb-8 border border-red-200 space-y-3.5">
+              <div>
+                <span className="text-xs font-bold text-red-800 uppercase block mb-1">
+                  ⚠ Uploaded PDF Digest (SHA-256 Altered / Tampered)
+                </span>
+                <div className="bg-white p-3 rounded-lg border border-red-200 font-mono text-xs text-red-700 break-all select-all">
+                  {activeResult.uploadedHash}
+                </div>
+              </div>
+              <div>
+                <span className="text-xs font-bold text-gray-700 uppercase block mb-1">
+                  ✓ Immutable Blockchain Ledger Digest (Authentic Record)
+                </span>
+                <div className="bg-white p-3 rounded-lg border border-gray-200 font-mono text-xs text-emerald-800 font-semibold break-all select-all">
+                  {activeResult.originalHash}
+                </div>
               </div>
             </div>
+          ) : (
+            certificateData.sha256 && (
+              <div className="bg-gray-50 rounded-xl p-4 mb-8 border border-gray-200">
+                <span className="text-xs font-bold text-gray-500 uppercase block mb-1.5">
+                  SHA-256 Cryptographic Hash Digest (Module 3)
+                </span>
+                <div className="bg-white p-3 rounded-lg border border-gray-200 font-mono text-xs text-gray-700 break-all select-all">
+                  {certificateData.sha256}
+                </div>
+              </div>
+            )
           )}
 
           {/* Action Buttons */}
-          <div className="grid md:grid-cols-2 gap-3 mb-6">
+          <div className="flex justify-center mb-6">
             <button
               type="button"
               onClick={downloadOriginalPdf}
-              className="inline-flex items-center justify-center gap-2 bg-[#1F3D2B] text-white py-3.5 px-6 rounded-full font-medium hover:bg-[#16281C] transition-colors shadow-sm cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 bg-[#1F3D2B] text-white py-3.5 px-8 rounded-full font-medium hover:bg-[#16281C] transition-colors shadow-sm cursor-pointer"
             >
               <Download size={18} /> Download Official Certificate PDF
             </button>
-
-            <a
-              href={`${apiService.BACKEND_URL}/verify/${certificateData.id}`}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center justify-center gap-2 border-2 border-[#1F3D2B] text-[#1F3D2B] py-3.5 px-6 rounded-full font-medium hover:bg-green-50 transition-colors"
-            >
-              <ExternalLink size={18} /> View Standalone Portal
-            </a>
           </div>
 
           {/* Back link */}

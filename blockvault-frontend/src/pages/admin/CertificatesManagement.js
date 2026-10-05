@@ -663,19 +663,11 @@ export default function CertificatesManagement() {
                   /* PDF DOCUMENT VIEW EMBED WITH SECURE HTTPS URL                             */
                   /* ========================================================================= */
                   <div className="flex-1 flex flex-col space-y-3">
-                    <div className="flex items-center justify-between text-xs bg-emerald-50/70 p-3 rounded-xl border border-emerald-200 text-[#1F3D2B]">
+                    <div className="flex items-center text-xs bg-emerald-50/70 p-3 rounded-xl border border-emerald-200 text-[#1F3D2B]">
                       <span className="flex items-center gap-1.5 font-semibold">
                         <FileCheck className="w-4 h-4 text-emerald-700" />
                         Official PDFKit Document: {certId}.pdf
                       </span>
-                      <a
-                        href={securePdfUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="font-bold text-[#1F3D2B] hover:underline flex items-center gap-1 cursor-pointer"
-                      >
-                        Open Full Tab <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
                     </div>
 
                     <div className="relative w-full h-[54vh] min-h-[420px] bg-gray-100 rounded-2xl overflow-hidden border border-gray-300 shadow-inner flex flex-col">

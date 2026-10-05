@@ -91,8 +91,42 @@ router.post("/compare", (req, res) => {
   });
 });
 
+/**
+ * Extract Certificate ID from PDF stream or hex TJ arrays
+ */
+function extractCertificateIdFromBuffer(buf) {
+  const zlib = require("zlib");
+  let idx = 0;
+  while ((idx = buf.indexOf(Buffer.from("stream"), idx)) !== -1) {
+    let start = idx + 6;
+    if (buf[start] === 0x0d && buf[start + 1] === 0x0a) start += 2;
+    else if (buf[start] === 0x0a || buf[start] === 0x0d) start += 1;
+    const end = buf.indexOf(Buffer.from("endstream"), start);
+    if (end !== -1) {
+      try {
+        const dec = zlib.inflateSync(buf.subarray(start, end)).toString("utf8");
+        const directMatch = dec.match(/BV-[0-9]{4}-[0-9A-Fa-f]+/);
+        if (directMatch) return directMatch[0];
+
+        const tjMatches = dec.match(/\[([\s\S]*?)\]\s*TJ/g) || [];
+        for (const tj of tjMatches) {
+          let text = "";
+          const hexParts = tj.match(/<([0-9A-Fa-f]+)>/g) || [];
+          for (const h of hexParts) {
+            text += Buffer.from(h.slice(1, -1), "hex").toString("utf8");
+          }
+          const m = text.match(/BV-[0-9]{4}-[0-9A-Fa-f]+/);
+          if (m) return m[0];
+        }
+      } catch (e) {}
+    }
+    idx = end + 9;
+  }
+  return null;
+}
+
 // ── POST /api/hash/verify-upload ─────────────────────────────────────────────
-// Upload a PDF + certificateId → returns whether the PDF hash matches blockchain record
+// Upload a PDF (with optional certificateId) → verifies against blockchain ledger
 router.post(
   "/verify-upload",
   upload.single("certificate"),
@@ -102,13 +136,7 @@ router.post(
         return res.status(400).json({ success: false, message: "No PDF uploaded." });
       }
 
-      const { certificateId } = req.body;
-      if (!certificateId) {
-        fs.unlink(req.file.path, () => {});
-        return res
-          .status(400)
-          .json({ success: false, message: "certificateId is required." });
-      }
+      let { certificateId } = req.body;
 
       // Compute uploaded PDF hash
       const fileBuffer = fs.readFileSync(req.file.path);
@@ -118,31 +146,74 @@ router.post(
         .digest("hex");
       fs.unlink(req.file.path, () => {});
 
-      // Look up stored certificate
-      const cert = certificateService.getCertificateById(certificateId);
-      if (!cert) {
-        return res.status(404).json({
+      if (!certificateId) {
+        // Fallback 1: Extract from PDF stream contents
+        certificateId = extractCertificateIdFromBuffer(fileBuffer);
+      }
+
+      if (!certificateId) {
+        // Fallback 2: Check if filename contains Certificate ID
+        const nameMatch = (req.file.originalname || "").match(/BV-[0-9]{4}-[0-9A-Fa-f]+/i);
+        if (nameMatch) {
+          certificateId = nameMatch[0];
+        }
+      }
+
+      // If Certificate ID is identified, compare against blockchain record
+      if (certificateId) {
+        const cert = certificateService.getCertificateById(certificateId);
+        if (cert) {
+          const storedHash = (cert.hash || cert.sha256 || "").toLowerCase();
+          const match = uploadedHash.toLowerCase() === storedHash;
+          const isRevoked = cert.status === "Invalid";
+
+          return res.json({
+            success: true,
+            verified: match && !isRevoked,
+            status: !match ? "TAMPERED" : (isRevoked ? "REVOKED" : "VALID"),
+            reason: !match
+              ? "Cryptographic hash mismatch! The certificate file has been altered or tampered with."
+              : (isRevoked
+                  ? `Certificate has been revoked: ${cert.revocationReason || "Administrative Review"}`
+                  : "SHA-256 hash matches — certificate is genuine and unmodified."),
+            uploadedHash,
+            originalHash: storedHash,
+            certificateRecord: cert,
+          });
+        }
+      }
+
+      // Fallback 3: Search all certificates by hash across blockchain ledger
+      const allCerts = certificateService.getAllCertificates();
+      const matched = allCerts.find(
+        (c) => (c.hash || c.sha256 || "").toLowerCase() === uploadedHash.toLowerCase()
+      );
+
+      if (matched) {
+        const isRevoked = matched.status === "Invalid";
+        return res.json({
           success: true,
-          verified: false,
-          reason: `No certificate record found for ID: ${certificateId}`,
+          verified: !isRevoked,
+          status: isRevoked ? "REVOKED" : "VALID",
+          reason: isRevoked
+            ? `Certificate has been revoked: ${matched.revocationReason || "Administrative Review"}`
+            : "SHA-256 hash matches — certificate is genuine and unmodified.",
           uploadedHash,
+          originalHash: matched.hash,
+          certificateRecord: matched,
         });
       }
 
-      const storedHash = (cert.hash || cert.sha256 || "").toLowerCase();
-      const match = uploadedHash.toLowerCase() === storedHash;
-
-      res.json({
+      // If not found
+      return res.json({
         success: true,
-        verified: match,
-        reason: match
-          ? "SHA-256 hash matches — certificate is genuine and unmodified."
-          : "Hash mismatch — certificate file has been altered or is counterfeit.",
+        verified: false,
+        status: "NOT_FOUND",
+        reason: "No certificate matching this file digest or ID was found on the blockchain ledger.",
         uploadedHash,
-        originalHash: storedHash,
-        certificateRecord: cert,
       });
     } catch (err) {
+      console.error("verify-upload error:", err);
       res.status(500).json({ success: false, message: err.message });
     }
   }

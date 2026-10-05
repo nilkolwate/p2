@@ -1,5 +1,6 @@
 const express = require("express");
 const nodemailer = require("nodemailer");
+const https = require("https");
 const fs = require("fs");
 const path = require("path");
 
@@ -23,19 +24,131 @@ function getEmailTransporter() {
     secure: true,
     auth: { user, pass },
     tls: { rejectUnauthorized: false },
-    connectionTimeout: 10000,
+    connectionTimeout: 8000,
+    greetingTimeout: 8000,
+  });
+}
+
+/**
+ * Send an email via Resend HTTP API (works seamlessly on Render without SMTP port blocking)
+ */
+async function sendViaResend({ to, replyTo, subject, html, text }) {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return null;
+
+  return new Promise((resolve, reject) => {
+    const payload = JSON.stringify({
+      from: process.env.EMAIL_FROM || "BlockVault <onboarding@resend.dev>",
+      to: Array.isArray(to) ? to : [to],
+      reply_to: replyTo,
+      subject,
+      html,
+      text,
+    });
+
+    const options = {
+      hostname: "api.resend.com",
+      port: 443,
+      path: "/emails",
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(payload),
+      },
+      timeout: 10000,
+    };
+
+    const req = https.request(options, (res) => {
+      let data = "";
+      res.on("data", (chunk) => {
+        data += chunk;
+      });
+      res.on("end", () => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          resolve({ success: true, provider: "resend", data });
+        } else {
+          reject(new Error(`Resend API error (${res.statusCode}): ${data}`));
+        }
+      });
+    });
+
+    req.on("error", (err) => reject(err));
+    req.on("timeout", () => {
+      req.destroy();
+      reject(new Error("Resend API connection timed out"));
+    });
+    req.write(payload);
+    req.end();
+  });
+}
+
+/**
+ * Send an email via Brevo (Sendinblue) HTTP API
+ */
+async function sendViaBrevo({ to, replyTo, senderName, subject, html, text }) {
+  const apiKey = process.env.BREVO_API_KEY;
+  if (!apiKey) return null;
+
+  return new Promise((resolve, reject) => {
+    const payload = JSON.stringify({
+      sender: {
+        name: "BlockVault Portal",
+        email: process.env.EMAIL_FROM || process.env.EMAIL_USER || "support@blockvault.internal",
+      },
+      to: [{ email: to }],
+      replyTo: { email: replyTo, name: senderName || "Visitor" },
+      subject,
+      htmlContent: html,
+      textContent: text,
+    });
+
+    const options = {
+      hostname: "api.brevo.com",
+      port: 443,
+      path: "/v3/smtp/email",
+      method: "POST",
+      headers: {
+        "api-key": apiKey,
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(payload),
+      },
+      timeout: 10000,
+    };
+
+    const req = https.request(options, (res) => {
+      let data = "";
+      res.on("data", (chunk) => {
+        data += chunk;
+      });
+      res.on("end", () => {
+        if (res.statusCode >= 200 && res.statusCode < 300) {
+          resolve({ success: true, provider: "brevo", data });
+        } else {
+          reject(new Error(`Brevo API error (${res.statusCode}): ${data}`));
+        }
+      });
+    });
+
+    req.on("error", (err) => reject(err));
+    req.on("timeout", () => {
+      req.destroy();
+      reject(new Error("Brevo API connection timed out"));
+    });
+    req.write(payload);
+    req.end();
   });
 }
 
 /**
  * POST /api/contact and /api/support
- * Logs support inquiries and attempts email notification.
+ * Logs support inquiries and dispatches email notification via HTTP API or SMTP.
  */
 router.post("/", async (req, res) => {
   const { name, email, subject, message, problem, userEmail } = req.body;
   const senderEmail = (email || userEmail || "").trim();
-  const senderName = (name || "BlockVault User").trim();
-  const msgSubject = (subject || "BlockVault Support Inquiry").trim();
+  const senderName = (name || "BlockVault Visitor").trim();
+  const msgSubject = (subject || "BlockVault Contact Inquiry").trim();
   const msgContent = (message || problem || "").trim();
 
   if (!senderEmail) {
@@ -75,70 +188,131 @@ router.post("/", async (req, res) => {
     console.warn("Could not save inquiry log:", fsErr.message);
   }
 
-  // 2. Attempt email dispatch via Nodemailer or HTTP API if configured
-  let emailSent = false;
-  let emailError = null;
-  const transporter = getEmailTransporter();
+  // 2. Prepare email payload
+  const recipient =
+    process.env.CONTACT_RECIPIENT ||
+    process.env.EMAIL_USER ||
+    "blockvault.support@gmail.com";
 
-  if (transporter) {
+  const emailSubject = `[BlockVault Contact] ${msgSubject} - from ${senderName}`;
+  const emailHtml = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e5e7eb; border-radius: 12px; background: #ffffff;">
+      <div style="border-bottom: 2px solid #1F3D2B; padding-bottom: 12px; margin-bottom: 18px;">
+        <h2 style="color: #1F3D2B; margin: 0; font-size: 20px;">BlockVault Contact Inquiry</h2>
+        <span style="color: #6b7280; font-size: 12px;">Submitted via Public Portal</span>
+      </div>
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 14px;">
+        <tr>
+          <td style="padding: 6px 0; color: #4b5563; font-weight: 600; width: 110px;">From:</td>
+          <td style="padding: 6px 0; color: #111827; font-weight: 500;">${senderName}</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; color: #4b5563; font-weight: 600;">Reply-To Email:</td>
+          <td style="padding: 6px 0; color: #111827;"><a href="mailto:${senderEmail}" style="color: #1F3D2B; text-decoration: underline;">${senderEmail}</a></td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; color: #4b5563; font-weight: 600;">Subject:</td>
+          <td style="padding: 6px 0; color: #111827;">${msgSubject}</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; color: #4b5563; font-weight: 600;">Timestamp:</td>
+          <td style="padding: 6px 0; color: #111827;">${new Date().toLocaleString()}</td>
+        </tr>
+      </table>
+      <div style="margin-top: 10px;">
+        <h4 style="color: #1F3D2B; margin: 0 0 8px 0; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">Message:</h4>
+        <div style="background: #f9fafb; padding: 16px; border-radius: 8px; border: 1px solid #e5e7eb; white-space: pre-wrap; font-size: 14px; line-height: 1.6; color: #1f2937;">
+${msgContent}
+        </div>
+      </div>
+      <div style="margin-top: 24px; padding-top: 14px; border-top: 1px solid #f3f4f6; text-align: center; color: #9ca3af; font-size: 11px;">
+        Hit "Reply" in your email client to directly reply to ${senderEmail}.
+      </div>
+    </div>
+  `;
+
+  const emailText = `BlockVault Contact Inquiry\n\nFrom: ${senderName}\nEmail: ${senderEmail}\nSubject: ${msgSubject}\nDate: ${new Date().toLocaleString()}\n\nMessage:\n${msgContent}\n\nReply directly to: ${senderEmail}`;
+
+  // 3. Dispatch Email Strategy:
+  // Priority A: Resend HTTP API (if RESEND_API_KEY is configured)
+  // Priority B: Brevo HTTP API (if BREVO_API_KEY is configured)
+  // Priority C: Nodemailer SMTP (if EMAIL_USER and EMAIL_PASSWORD are configured)
+  let emailSent = false;
+  let deliveryProvider = null;
+  let emailError = null;
+
+  if (process.env.RESEND_API_KEY) {
     try {
-      const recipient = process.env.EMAIL_USER || "blockvault.support@gmail.com";
-      const info = await transporter.sendMail({
-        from: `"BlockVault Contact" <${process.env.EMAIL_USER}>`,
+      await sendViaResend({
         to: recipient,
         replyTo: senderEmail,
-        subject: `[BlockVault] ${msgSubject} - from ${senderName}`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 12px; background: #fafafa;">
-            <h2 style="color: #1F3D2B; margin-top: 0; border-bottom: 2px solid #1F3D2B; padding-bottom: 10px;">
-              BlockVault Contact Inquiry
-            </h2>
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-              <tr>
-                <td style="padding: 8px 0; color: #666; font-weight: bold; width: 120px;">Name:</td>
-                <td style="padding: 8px 0; color: #222;">${senderName}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #666; font-weight: bold;">Email:</td>
-                <td style="padding: 8px 0; color: #222;"><a href="mailto:${senderEmail}" style="color: #14579c;">${senderEmail}</a></td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #666; font-weight: bold;">Subject:</td>
-                <td style="padding: 8px 0; color: #222;">${msgSubject}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #666; font-weight: bold;">Date:</td>
-                <td style="padding: 8px 0; color: #222;">${new Date().toLocaleString()}</td>
-              </tr>
-            </table>
-            <h4 style="color: #1F3D2B; margin-bottom: 8px;">Message:</h4>
-            <div style="background: #ffffff; padding: 15px; border-radius: 8px; border: 1px solid #ddd; white-space: pre-wrap; font-size: 14px; line-height: 1.6;">
-${msgContent}
-            </div>
-          </div>
-        `,
-        text: `BlockVault Contact Message\n\nName: ${senderName}\nEmail: ${senderEmail}\nSubject: ${msgSubject}\nDate: ${new Date().toLocaleString()}\n\nMessage:\n${msgContent}`,
+        subject: emailSubject,
+        html: emailHtml,
+        text: emailText,
       });
-      console.log("Contact email sent successfully, messageId:", info.messageId);
       emailSent = true;
+      deliveryProvider = "Resend HTTP API";
+      console.log("Contact email sent via Resend API to", recipient);
     } catch (err) {
-      console.error("Nodemailer delivery error:", err.message);
-      emailError = err.message;
+      console.error("Resend API failed:", err.message);
+      emailError = `Resend: ${err.message}`;
     }
-  } else {
-    emailError = "EMAIL_USER or EMAIL_PASSWORD not configured on server.";
   }
 
-  // Return success since the inquiry was logged successfully
+  if (!emailSent && process.env.BREVO_API_KEY) {
+    try {
+      await sendViaBrevo({
+        to: recipient,
+        replyTo: senderEmail,
+        senderName,
+        subject: emailSubject,
+        html: emailHtml,
+        text: emailText,
+      });
+      emailSent = true;
+      deliveryProvider = "Brevo HTTP API";
+      console.log("Contact email sent via Brevo API to", recipient);
+    } catch (err) {
+      console.error("Brevo API failed:", err.message);
+      emailError = `Brevo: ${err.message}`;
+    }
+  }
+
+  if (!emailSent) {
+    const transporter = getEmailTransporter();
+    if (transporter) {
+      try {
+        const info = await transporter.sendMail({
+          from: `"BlockVault Contact" <${process.env.EMAIL_USER}>`,
+          to: recipient,
+          replyTo: senderEmail,
+          subject: emailSubject,
+          html: emailHtml,
+          text: emailText,
+        });
+        emailSent = true;
+        deliveryProvider = "Nodemailer SMTP";
+        console.log("Contact email sent via SMTP, messageId:", info.messageId);
+      } catch (smtpErr) {
+        console.error("SMTP delivery error on Render:", smtpErr.message);
+        emailError = `SMTP: ${smtpErr.message}`;
+      }
+    } else if (!deliveryProvider) {
+      emailError = "No email credentials configured (RESEND_API_KEY, BREVO_API_KEY, or EMAIL_USER/PASSWORD).";
+    }
+  }
+
+  // Return response
   return res.json({
     success: true,
     saved: true,
     emailSent,
+    provider: deliveryProvider,
     inquiryId: inquiryRecord.id,
     message: emailSent
-      ? "Your message has been sent successfully to the BlockVault support team!"
-      : "Your inquiry has been received and recorded by the BlockVault support team.",
-    ...(emailError ? { emailNote: emailError } : {}),
+      ? "Your message has been sent successfully to the BlockVault team!"
+      : "Your inquiry has been received and safely logged for the administrative team.",
+    ...(emailError && !emailSent ? { emailNote: emailError } : {}),
   });
 });
 

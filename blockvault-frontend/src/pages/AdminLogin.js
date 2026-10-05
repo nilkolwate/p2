@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Shield, User, Lock, Eye, EyeOff, ArrowRight, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 import apiService from '../services/api';
+import { isAdminAuthenticated } from '../utils/auth';
 
 export default function AdminLogin() {
   const [username, setUsername] = useState('');
@@ -14,14 +15,21 @@ export default function AdminLogin() {
   const location = useLocation();
 
   useEffect(() => {
-    // Check if redirected due to unauthorized access or expired session
     const searchParams = new URLSearchParams(location.search);
+    const expired = searchParams.get('sessionExpired') === 'true';
+
+    // If user is already authenticated and session hasn't expired, redirect to /admin
+    if (!expired && isAdminAuthenticated()) {
+      navigate('/admin', { replace: true });
+      return;
+    }
+
     if (searchParams.get('unauthorized') === 'true') {
       setError('Access Restricted: You must log in as Administrator to access the admin panel.');
-    } else if (searchParams.get('sessionExpired') === 'true') {
+    } else if (expired) {
       setError('Session Expired: Your session has expired or is invalid. Please log in again.');
     }
-  }, [location]);
+  }, [location, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

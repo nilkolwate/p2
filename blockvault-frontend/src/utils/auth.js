@@ -25,11 +25,40 @@ export const getToken = () => {
 };
 
 /**
+ * Check if a JWT token is expired based on its base64 payload exp claim
+ */
+export const isTokenExpired = (token) => {
+  if (!token) return true;
+  try {
+    const parts = token.split('.');
+    if (parts.length < 2) return false;
+    const base64Url = parts[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    const parsed = JSON.parse(jsonPayload);
+    if (!parsed.exp) return false;
+    return parsed.exp * 1000 < Date.now();
+  } catch (e) {
+    return false;
+  }
+};
+
+/**
  * Check if the admin is currently authenticated with a stored JWT token
  */
 export const isAdminAuthenticated = () => {
   const token = getToken();
-  return Boolean(token);
+  if (!token) return false;
+  if (isTokenExpired(token)) {
+    logoutAdmin();
+    return false;
+  }
+  return true;
 };
 
 /**

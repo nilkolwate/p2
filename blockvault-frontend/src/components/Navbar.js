@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import BlockVaultLogo from './BlockVaultLogo';
+import { isAdminAuthenticated } from '../utils/auth';
 
 const navLinks = [
   { to: '/', label: 'Home' },
@@ -12,6 +13,9 @@ const navLinks = [
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const isLoggedIn = isAdminAuthenticated();
+  const adminLink = isLoggedIn ? '/admin' : '/login';
+  const adminText = isLoggedIn ? 'Admin Dashboard' : 'Login as Administrator';
 
   return (
     <header className="sticky top-0 z-50 bg-brand-cream/95 backdrop-blur-sm border-b border-brand-beige/50">
@@ -54,10 +58,10 @@ const Navbar = () => {
         {/* Login button (desktop) */}
         <div className="hidden md:block">
           <Link
-            to="/login"
+            to={adminLink}
             className="inline-flex items-center gap-2 bg-brand-green text-white text-sm font-medium px-5 py-2.5 rounded-full hover:bg-brand-green-dark transition-colors"
           >
-            Login as Administrator
+            {adminText}
           </Link>
         </div>
 
@@ -89,11 +93,11 @@ const Navbar = () => {
             </NavLink>
           ))}
           <Link
-            to="/login"
+            to={adminLink}
             className="block text-center bg-brand-green text-white text-sm font-medium px-5 py-2.5 rounded-full mt-3"
             onClick={() => setMobileOpen(false)}
           >
-            Login as Administrator
+            {adminText}
           </Link>
         </div>
       )}

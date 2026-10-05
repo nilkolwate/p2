@@ -80,20 +80,32 @@ export default function VerifyCertificate() {
   const extractIdFromText = (text) => {
     if (!text) return '';
     const trimmed = text.trim();
+
     // 1. Direct ID (e.g. BV-2026-2293B257)
     if (/^[A-Za-z0-9_-]+$/.test(trimmed) && trimmed.length >= 4 && trimmed.length <= 40) {
       return trimmed;
     }
+
     // 2. URL path: .../verify/CERT_ID
     const pathMatch = trimmed.match(/\/verify\/([A-Za-z0-9_-]+)/i);
     if (pathMatch && pathMatch[1] && pathMatch[1].toLowerCase() !== 'result') {
       return pathMatch[1];
     }
+
     // 3. Query string: ?id=CERT_ID or ?certificateId=CERT_ID
     const queryMatch = trimmed.match(/[?&](?:id|certificateId)=([A-Za-z0-9_-]+)/i);
     if (queryMatch && queryMatch[1]) {
       return queryMatch[1];
     }
+
+    // 4. JSON format: {"id": "...", "certificateId": "..."}
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (parsed && (parsed.certificateId || parsed.id)) {
+        return parsed.certificateId || parsed.id;
+      }
+    } catch (_) {}
+
     return trimmed;
   };
 
@@ -107,15 +119,23 @@ export default function VerifyCertificate() {
     setLoading(true);
     setError('');
 
-    const certId = extractIdFromText(decodedString);
+    const trimmedInput = decodedString.trim();
+    const certId = extractIdFromText(trimmedInput);
+
+    // Extract hash from QR URL query string if present (?hash=...)
+    let hash = null;
+    const hashMatch = trimmedInput.match(/[?&]hash=([a-fA-F0-9]{64})/i);
+    if (hashMatch) {
+      hash = hashMatch[1];
+    }
 
     try {
       // 1. Try verifyQRCode with the scanned content
-      let result = await apiService.verifyQRCode(decodedString.trim());
+      let result = await apiService.verifyQRCode(trimmedInput, hash);
 
       // 2. If not found and we have an extracted ID, try with extracted ID
-      if ((!result || !result.success || !result.certificateRecord) && certId && certId !== decodedString) {
-        result = await apiService.verifyQRCode(certId);
+      if ((!result || !result.success || !result.certificateRecord) && certId && certId !== trimmedInput) {
+        result = await apiService.verifyQRCode(certId, hash);
       }
 
       if (result && result.success && result.certificateRecord) {
@@ -124,6 +144,7 @@ export default function VerifyCertificate() {
             result,
             certificateId: result.certificateRecord.id,
             fromQR: true,
+            expectedHash: hash,
           },
         });
         return;
@@ -142,6 +163,7 @@ export default function VerifyCertificate() {
               },
               certificateId: certId,
               fromQR: true,
+              expectedHash: hash,
             },
           });
           return;
@@ -175,7 +197,7 @@ export default function VerifyCertificate() {
         const imageData = ctx.getImageData(0, 0, img.width, img.height);
 
         const code = jsQR(imageData.data, imageData.width, imageData.height, {
-          inversionAttempts: 'dontInvert',
+          inversionAttempts: 'attemptBoth',
         });
         if (code && code.data) {
           processQRData(code.data);
@@ -192,6 +214,11 @@ export default function VerifyCertificate() {
   const startCamera = async () => {
     setCameraError('');
     setError('');
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setCameraError('Camera access requires HTTPS or a supported modern browser. You can upload a QR image or paste the code instead.');
+      return;
+    }
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -241,7 +268,7 @@ export default function VerifyCertificate() {
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
         const code = jsQR(imageData.data, imageData.width, imageData.height, {
-          inversionAttempts: 'dontInvert',
+          inversionAttempts: 'attemptBoth',
         });
         if (code && code.data) {
           stopCamera();
@@ -281,9 +308,28 @@ export default function VerifyCertificate() {
           return;
         }
 
-        // Calculate cryptographic hash of uploaded PDF
+        // Calculate cryptographic hash of uploaded PDF in browser
         const computedHash = await calculateSha256(file);
 
+        // First attempt: Server-side PDF parsing and verification
+        try {
+          const uploadRes = await apiService.verifyUploadedFile(file, certId.trim());
+          if (uploadRes && uploadRes.success) {
+            navigate('/verify/result', {
+              state: {
+                result: uploadRes,
+                certificateId: uploadRes.certificateRecord?.id || certId.trim() || '',
+                uploadedHash: uploadRes.uploadedHash || computedHash,
+                originalHash: uploadRes.originalHash,
+              },
+            });
+            return;
+          }
+        } catch (uploadErr) {
+          console.warn('Backend file upload verification unavailable, trying direct hash verification:', uploadErr);
+        }
+
+        // Fallback: Direct hash verification
         if (certId.trim()) {
           const result = await apiService.verifyCertificate(certId.trim(), computedHash);
           navigate('/verify/result', {

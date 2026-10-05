@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { isAdminAuthenticated, logoutAdmin } from '../utils/auth';
+import { logoutAdmin, getToken, isTokenExpired } from '../utils/auth';
 import apiService from '../services/api';
 import { Loader2 } from 'lucide-react';
 
 /**
  * Route protection wrapper for administrative paths.
  * Validates the JWT token with the backend on route access.
- * If expired or invalid, clears storage and redirects to /login.
+ * If expired or rejected with 401, clears storage and redirects to /login.
  */
 const ProtectedRoute = () => {
   const location = useLocation();
@@ -19,7 +19,9 @@ const ProtectedRoute = () => {
 
     const validateSession = async () => {
       // 1. Quick check for stored token in sessionStorage
-      if (!isAdminAuthenticated()) {
+      const token = getToken();
+      if (!token || isTokenExpired(token)) {
+        logoutAdmin();
         if (isMounted) {
           setIsAuthorized(false);
           setIsValidating(false);
@@ -33,18 +35,26 @@ const ProtectedRoute = () => {
         if (isMounted) {
           if (res && res.success) {
             setIsAuthorized(true);
-          } else {
-            // Token rejected by server
+          } else if (res && res._status === 401) {
+            // Explicit 401 Unauthorized from backend
             logoutAdmin();
             setIsAuthorized(false);
+          } else {
+            // If backend is sleeping/cold-starting or transient network error,
+            // retain existing authenticated state if token is still unexpired
+            setIsAuthorized(true);
           }
           setIsValidating(false);
         }
       } catch (err) {
         if (isMounted) {
-          // If server error or network issue while having a token, re-verify or deny
-          logoutAdmin();
-          setIsAuthorized(false);
+          // Preserve valid local session during temporary network hiccups
+          if (token && !isTokenExpired(token)) {
+            setIsAuthorized(true);
+          } else {
+            logoutAdmin();
+            setIsAuthorized(false);
+          }
           setIsValidating(false);
         }
       }

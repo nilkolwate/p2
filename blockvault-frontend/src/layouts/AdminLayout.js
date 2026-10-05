@@ -14,11 +14,11 @@ import {
   Shield,
   CheckCircle,
   AlertTriangle,
-  FileCheck,
+  Menu,
   Check,
+  FileCheck,
 } from 'lucide-react';
 import { isAdminAuthenticated, logoutAdmin, getAdminUser } from '../utils/auth';
-import AdminNavbar from '../components/AdminNavbar';
 
 const sidebarLinks = [
   { to: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
@@ -181,12 +181,18 @@ const AdminLayout = () => {
 
       {/* Main content area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Navbar with Public Site links + Mobile toggle + Logout */}
-        <AdminNavbar onToggleSidebar={() => setSidebarOpen(true)} />
-
-        {/* Secondary Sub-header: Search & Notifications */}
+        {/* Admin Header: Search & Notifications */}
         <header className="bg-brand-cream/80 border-b border-brand-beige/50 px-4 lg:px-8 py-2.5">
           <div className="flex items-center gap-4">
+            {/* Mobile menu toggle for sidebar */}
+            <button
+              type="button"
+              className="lg:hidden p-2 text-brand-charcoal hover:text-brand-green hover:bg-white/60 rounded-lg transition-colors cursor-pointer mr-1"
+              onClick={() => setSidebarOpen(true)}
+              title="Open Admin Sidebar"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
 
             {/* Search */}
             <div className="flex-1 max-w-md">

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Shield, Hash, Zap, Lock, CheckCircle, ArrowRight, FileCheck, Database, QrCode, Sparkles, Layers } from 'lucide-react';
+import { Shield, Hash, Zap, Lock, CheckCircle, FileCheck, Database, QrCode, Sparkles, Layers, ArrowRight } from 'lucide-react';
 import BlockVaultLogo from '../components/BlockVaultLogo';
 
 const features = [
@@ -98,36 +98,22 @@ export default function HomePage() {
               Certificates You Can{' '}
               <em className="italic">Trust</em>
             </h1>
-            <p className="text-lg text-gray-600 leading-relaxed mb-8 max-w-lg">
+            <p className="text-lg text-gray-600 leading-relaxed mb-4 max-w-lg">
               BlockVault uses blockchain technology and SHA-256 cryptographic hashing
               to guarantee the authenticity of every academic certificate — making
               fraud impossible and verification instant.
             </p>
-            <div className="flex flex-wrap gap-4">
-              <Link
-                to="/verify"
-                className="inline-flex items-center gap-2 bg-[#1F3D2B] text-white px-7 py-3 rounded-full font-medium hover:bg-[#16281C] transition-colors shadow-sm"
-              >
-                Verify Certificate <ArrowRight size={18} />
-              </Link>
-              <Link
-                to="/about"
-                className="inline-flex items-center gap-2 border-2 border-[#1F3D2B] text-[#1F3D2B] px-7 py-3 rounded-full font-medium hover:bg-[#1F3D2B] hover:text-white transition-colors"
-              >
-                About BlockVault
-              </Link>
-            </div>
           </div>
 
-          {/* Right column — circular photo + floating badge */}
+          {/* Right column — circular design + floating badge */}
           <div className="flex justify-center lg:justify-end">
             <div className="relative">
-              <div className="w-72 h-72 lg:w-96 lg:h-96 rounded-full overflow-hidden shadow-xl ring-4 ring-white">
-                <img
-                  src="https://images.unsplash.com/photo-1523050854058-8df90110c476?w=600&h=600&fit=crop"
-                  alt="Certificate on a desk"
-                  className="w-full h-full object-cover"
-                />
+              <div className="w-72 h-72 lg:w-96 lg:h-96 rounded-full shadow-2xl ring-4 ring-white/90 bg-gradient-to-br from-[#F5F1E9] via-[#EDE7DA] to-[#D5C6AF] flex items-center justify-center border-4 border-[#1F3D2B]/15 relative overflow-hidden group">
+                {/* Subtle decorative concentric rings */}
+                <div className="absolute inset-4 rounded-full border border-[#1F3D2B]/10 pointer-events-none" />
+                <div className="absolute inset-8 rounded-full border border-dashed border-[#1F3D2B]/15 pointer-events-none" />
+                {/* Centered BlockVault Logo matching the colour scheme */}
+                <BlockVaultLogo className="w-40 h-40 lg:w-56 lg:h-56 transform group-hover:scale-105 transition-transform duration-500" />
               </div>
               {/* Floating badge */}
               <div className="absolute -bottom-2 right-2 lg:right-4 bg-white rounded-2xl shadow-lg px-5 py-3 flex items-center gap-3 border border-gray-100">
@@ -293,24 +279,10 @@ export default function HomePage() {
               >
                 Ready to Get Started?
               </h2>
-              <p className="text-green-200 text-lg mb-8 max-w-xl mx-auto">
+              <p className="text-green-200 text-lg max-w-xl mx-auto">
                 Join institutions that trust BlockVault for tamper-proof,
                 blockchain-backed certificate management.
               </p>
-              <div className="flex flex-wrap justify-center gap-4">
-                <Link
-                  to="/verify"
-                  className="inline-flex items-center gap-2 border-2 border-white text-white px-7 py-3 rounded-full font-medium hover:bg-white hover:text-[#1F3D2B] transition-colors"
-                >
-                  Verify Certificate <ArrowRight size={18} />
-                </Link>
-                <Link
-                  to="/login"
-                  className="inline-flex items-center gap-2 border-2 border-white text-white px-7 py-3 rounded-full font-medium hover:bg-white hover:text-[#1F3D2B] transition-colors"
-                >
-                  Login as Administrator <ArrowRight size={18} />
-                </Link>
-              </div>
             </div>
           </div>
         </div>
