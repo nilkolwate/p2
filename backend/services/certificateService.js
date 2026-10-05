@@ -35,6 +35,33 @@ function getLocalIPv4() {
 }
 
 /**
+ * Resolve canonical backend URL for serving assets (PDFs)
+ */
+function getBackendBaseUrl(hostHeader = null) {
+  if (process.env.BACKEND_URL) {
+    return process.env.BACKEND_URL.replace(/\/+$/, "");
+  }
+  if (hostHeader) {
+    if (hostHeader.includes("localhost") || hostHeader.includes("127.0.0.1")) {
+      return `http://${hostHeader}`;
+    }
+    return `https://${hostHeader}`;
+  }
+  if (process.env.NODE_ENV === "production") {
+    return "https://p2-c6yu.onrender.com";
+  }
+  return "https://p2-c6yu.onrender.com";
+}
+
+/**
+ * Return absolute HTTPS URL for certificate PDF download / preview
+ */
+function getPdfUrl(certificateId, hostHeader = null) {
+  const base = getBackendBaseUrl(hostHeader);
+  return `${base}/certificates/${certificateId}.pdf`;
+}
+
+/**
  * Extract clean Certificate ID from any QR scan string
  * Supports:
  * - Direct ID: "BV-2026-2293B257"
@@ -124,7 +151,7 @@ async function generateCertificate(data, hostHeader = null) {
     status: "Valid"
   });
 
-  const currentHost = hostHeader || `localhost:5000`;
+  const pdfUrl = getPdfUrl(certificateId, hostHeader);
   const certificateData = {
     id: certificateId,
     certificateId: certificateId,
@@ -142,7 +169,7 @@ async function generateCertificate(data, hostHeader = null) {
     issuer: data.issuer || "Office of the Registrar",
     verificationUrl: verificationUrl,
     qrDataUrl: qrDataUrl,
-    pdfUrl: `http://${currentHost}/certificates/${fileName}`,
+    pdfUrl: pdfUrl,
     fileName: fileName,
     createdAt: new Date().toISOString()
   };
@@ -162,7 +189,6 @@ function getAllCertificates(hostHeader = null) {
 
   const files = fs.readdirSync(certificatesFolder);
   const jsonFiles = files.filter((f) => f.endsWith(".json"));
-  const currentHost = hostHeader || `localhost:5000`;
 
   const certs = [];
   for (const file of jsonFiles) {
@@ -170,7 +196,6 @@ function getAllCertificates(hostHeader = null) {
       const fullPath = path.join(certificatesFolder, file);
       const content = JSON.parse(fs.readFileSync(fullPath, "utf8"));
       const certId = content.certificateId || content.id || file.replace(".json", "");
-      const pdfFileName = `${certId}.pdf`;
 
       // Standardize fields and sanitize URLs so stale/dead IPs never break links
       const cert = {
@@ -190,7 +215,7 @@ function getAllCertificates(hostHeader = null) {
         issuer: content.issuer || "Office of the Registrar",
         verificationUrl: getVerificationUrl(certId),
         qrDataUrl: content.qrDataUrl,
-        pdfUrl: `http://${currentHost}/certificates/${pdfFileName}`,
+        pdfUrl: getPdfUrl(certId, hostHeader),
         revocationReason: content.revocationReason,
         createdAt: content.createdAt || content.issueDate
       };
@@ -215,7 +240,6 @@ function getCertificateById(certificateId, hostHeader = null) {
   try {
     const content = JSON.parse(fs.readFileSync(jsonPath, "utf8"));
     const certId = content.certificateId || content.id || certificateId;
-    const currentHost = hostHeader || `localhost:5000`;
 
     return {
       id: certId,
@@ -234,7 +258,7 @@ function getCertificateById(certificateId, hostHeader = null) {
       issuer: content.issuer || "Office of the Registrar",
       verificationUrl: getVerificationUrl(certId),
       qrDataUrl: content.qrDataUrl,
-      pdfUrl: `http://${currentHost}/certificates/${certId}.pdf`,
+      pdfUrl: getPdfUrl(certId, hostHeader),
       revocationReason: content.revocationReason
     };
   } catch (err) {

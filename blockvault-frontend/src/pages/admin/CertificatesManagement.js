@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { QRCodeSVG } from 'qrcode.react';
 import apiService from '../../services/api';
 import {
   Plus,
@@ -19,6 +20,7 @@ import {
   FileCheck,
   RotateCcw,
   FileText,
+  Award,
 } from 'lucide-react';
 
 const initialCertificates = [
@@ -32,12 +34,12 @@ const initialCertificates = [
     issueDate: '2026-10-01',
     status: 'Valid',
     grade: 'First Class with Distinction',
-    sha256: '0c9a766f4444d15523cb644447df5478b255afcab9badeeeaadb64648f8c17f4',
-    hash: '0c9a766f4444d15523cb644447df5478b255afcab9badeeeaadb64648f8c17f4',
+    sha256: 'a2c9cf7bd2fcddfb65ae0d05ee081d451ad0145c26a5750d75f284ecbbd6174a',
+    hash: 'a2c9cf7bd2fcddfb65ae0d05ee081d451ad0145c26a5750d75f284ecbbd6174a',
     blockNumber: 'Block #1',
     issuer: 'Government Polytechnic Amravati',
     pdfUrl: `${apiService.BACKEND_URL}/certificates/BV-2026-2293B257.pdf`,
-    verificationUrl: `${apiService.BACKEND_URL}/verify/BV-2026-2293B257`,
+    verificationUrl: `https://nilkolwate.github.io/p2/#/verify/BV-2026-2293B257`,
   }
 ];
 
@@ -57,6 +59,7 @@ export default function CertificatesManagement() {
 
   // Modals
   const [viewModalCert, setViewModalCert] = useState(null);
+  const [previewMode, setPreviewMode] = useState('certificate'); // 'certificate' or 'pdf'
   const [revokeModalCert, setRevokeModalCert] = useState(null);
   const [isIssueModalOpen, setIsIssueModalOpen] = useState(false);
   const [revocationReason, setRevocationReason] = useState('Administrative Review');
@@ -90,7 +93,17 @@ export default function CertificatesManagement() {
     try {
       const res = await apiService.getCertificates();
       if (res && res.success && Array.isArray(res.data) && res.data.length > 0) {
-        setCertificates(res.data);
+        const sanitized = res.data.map((c) => {
+          const certId = c.certificateId || c.id;
+          return {
+            ...c,
+            id: certId,
+            certificateId: certId,
+            verificationUrl: `https://nilkolwate.github.io/p2/#/verify/${certId}`,
+            pdfUrl: `${apiService.BACKEND_URL}/certificates/${certId}.pdf`,
+          };
+        });
+        setCertificates(sanitized);
       }
     } catch (err) {
       console.warn('Backend certificates fetch failed, using local store:', err);
@@ -115,23 +128,25 @@ export default function CertificatesManagement() {
     currentPage * itemsPerPage
   );
 
-  // ACTION 1: View Certificate
+  // ACTION 1: View Certificate (Immediately open visual certificate card)
   const handleView = (cert) => {
     setViewModalCert(cert);
+    setPreviewMode('certificate');
   };
 
   // ACTION 2: Download Real PDF Certificate
   const handleDownload = (cert) => {
-    const downloadUrl = cert.pdfUrl || `${apiService.BACKEND_URL}/certificates/${cert.id}.pdf`;
+    const certId = cert.certificateId || cert.id;
+    const downloadUrl = `${apiService.BACKEND_URL}/certificates/${certId}.pdf`;
     const link = document.createElement('a');
     link.href = downloadUrl;
-    link.download = `Certificate_${cert.id}_${(cert.studentName || 'student').replace(/\s+/g, '_')}.pdf`;
+    link.download = `Certificate_${certId}_${(cert.studentName || 'student').replace(/\s+/g, '_')}.pdf`;
     link.target = '_blank';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 
-    showToast(`Downloading official Certificate PDF for ${cert.studentName} (${cert.id})`);
+    showToast(`Downloading official Certificate PDF for ${cert.studentName} (${certId})`);
   };
 
   // ACTION 3: Revoke or Restore Certificate
@@ -457,125 +472,295 @@ export default function CertificatesManagement() {
       {/* MODAL 1: VIEW CERTIFICATE DETAILS, REAL QR & PDF PREVIEW                   */}
       {/* ========================================================================= */}
       {/* ========================================================================= */}
-      {/* MODAL 1: VIEW OFFICIAL MODULE 3 CERTIFICATE (PDFKIT & BLOCKCHAIN)         */}
+      {/* MODAL 1: VIEW OFFICIAL CERTIFICATE (ACADEMIC PREVIEW & PDF VIEWER)        */}
       {/* ========================================================================= */}
-      {viewModalCert && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden border border-gray-100 max-h-[92vh] flex flex-col">
-            {/* Modal Topbar */}
-            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Shield className="w-5 h-5 text-[#1F3D2B]" />
-                <span className="font-bold text-sm text-gray-800 uppercase tracking-wider">
-                  Official Academic Certificate ({viewModalCert.id})
-                </span>
-              </div>
-              <button
-                onClick={() => setViewModalCert(null)}
-                className="p-1 text-gray-400 hover:text-gray-700 rounded-lg cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      {viewModalCert && (() => {
+        const certId = viewModalCert.certificateId || viewModalCert.id;
+        const verificationUrl = viewModalCert.verificationUrl || `https://nilkolwate.github.io/p2/#/verify/${certId}`;
+        const securePdfUrl = `${apiService.BACKEND_URL}/certificates/${certId}.pdf`;
 
-            {/* Official Module 3 PDF Certificate Content */}
-            <div className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1 flex flex-col">
-              <div className="flex items-center justify-between text-xs text-gray-600 px-1 flex-wrap gap-2">
-                <span className="flex items-center gap-1.5 font-medium text-gray-800">
-                  <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0" />
-                  <strong>{viewModalCert.studentName}</strong> — {viewModalCert.course} ({viewModalCert.institution || 'Government Polytechnic Amravati'})
-                </span>
-                <a
-                  href={viewModalCert.pdfUrl || `${apiService.BACKEND_URL}/certificates/${viewModalCert.id}.pdf`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-[#1F3D2B] font-semibold flex items-center gap-1 hover:underline"
-                >
-                  Open Full View <ExternalLink className="w-3 h-3" />
-                </a>
-              </div>
-
-              {/* Landscape A4 Certificate PDF Embed */}
-              <div className="relative w-full h-[58vh] min-h-[420px] bg-gray-100 rounded-2xl overflow-hidden border border-gray-300 shadow-inner">
-                <iframe
-                  src={viewModalCert.pdfUrl || `${apiService.BACKEND_URL}/certificates/${viewModalCert.id}.pdf`}
-                  title={`Certificate PDF ${viewModalCert.id}`}
-                  className="w-full h-full border-0"
-                />
-              </div>
-
-              {/* Cryptographic Ledger Strip */}
-              <div className="bg-gray-50 rounded-2xl p-4 border border-gray-200 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs items-center">
-                <div>
-                  <span className="text-gray-500 block font-semibold mb-0.5">Status:</span>
-                  <span
-                    className={`inline-block px-2.5 py-0.5 rounded-full font-bold text-[11px] border ${
-                      statusConfig[viewModalCert.status] || 'bg-gray-100'
-                    }`}
-                  >
-                    {viewModalCert.status}
-                  </span>
-                </div>
-
-                <div>
-                  <span className="text-gray-500 block font-semibold mb-0.5">SHA-256 PDF Digest:</span>
-                  <div className="flex items-center gap-1.5 bg-white p-1.5 rounded-lg border border-gray-200 font-mono text-[10px] text-gray-700">
-                    <span className="truncate flex-1">{viewModalCert.sha256 || viewModalCert.hash}</span>
-                    <button
-                      onClick={() => copyHash(viewModalCert.sha256 || viewModalCert.hash)}
-                      className="p-1 hover:text-[#1F3D2B] text-gray-500 cursor-pointer"
-                      title="Copy full hash"
-                    >
-                      {copied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
-                    </button>
+        return (
+          <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-3 sm:p-4 backdrop-blur-sm animate-fadeIn">
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden border border-gray-100 max-h-[92vh] flex flex-col">
+              {/* Modal Topbar */}
+              <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-emerald-50/30 border-b border-gray-200 flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-[#1F3D2B]/10 flex items-center justify-center text-[#1F3D2B]">
+                    <Shield className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="font-bold text-sm text-gray-900 tracking-wide uppercase">
+                      Certificate {certId}
+                    </span>
+                    <span className="hidden sm:inline-block text-xs text-gray-500 ml-2">
+                      • {viewModalCert.studentName}
+                    </span>
                   </div>
                 </div>
 
-                <div className="md:text-right">
-                  <span className="text-gray-500 block font-semibold mb-0.5">Blockchain Ledger:</span>
+                {/* View Mode Toggle */}
+                <div className="flex items-center gap-2">
+                  <div className="inline-flex rounded-xl bg-gray-100 p-1 border border-gray-200 text-xs font-semibold">
+                    <button
+                      onClick={() => setPreviewMode('certificate')}
+                      className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                        previewMode === 'certificate'
+                          ? 'bg-[#1F3D2B] text-white shadow-sm'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      <Award className="w-3.5 h-3.5" />
+                      Certificate View
+                    </button>
+                    <button
+                      onClick={() => setPreviewMode('pdf')}
+                      className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
+                        previewMode === 'pdf'
+                          ? 'bg-[#1F3D2B] text-white shadow-sm'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      PDF Document
+                    </button>
+                  </div>
+
                   <button
-                    onClick={() => {
-                      setViewModalCert(null);
-                      navigate('/admin/blockchain');
-                    }}
-                    className="text-xs text-[#1F3D2B] font-semibold hover:underline inline-flex items-center gap-1 cursor-pointer"
+                    onClick={() => setViewModalCert(null)}
+                    className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg cursor-pointer transition-colors"
                   >
-                    <strong>{viewModalCert.blockNumber || 'Block #1'}</strong> (Inspect Ledger) <ExternalLink className="w-3 h-3" />
+                    <X className="w-5 h-5" />
                   </button>
                 </div>
               </div>
-            </div>
 
-            {/* Modal Footer Actions */}
-            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between gap-3 flex-wrap">
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handleDownload(viewModalCert)}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-800 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors shadow-sm cursor-pointer"
-                >
-                  <Download className="w-4 h-4" /> Download PDF
-                </button>
+              {/* Modal Body */}
+              <div className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1 flex flex-col bg-gray-50/50">
+                {previewMode === 'certificate' ? (
+                  /* ========================================================================= */
+                  /* HIGH-FIDELITY ACADEMIC CERTIFICATE CANVAS (ALWAYS RENDERS INSTANTLY)      */
+                  /* ========================================================================= */
+                  <div className="relative w-full bg-[#FCFBF7] rounded-2xl border-4 border-[#1F3D2B] shadow-lg p-6 sm:p-8 text-[#1A1A1A] overflow-hidden">
+                    {/* Inner gold decorative border */}
+                    <div className="absolute inset-2 sm:inset-3 border border-[#C5A059] rounded-xl pointer-events-none opacity-80" />
+                    <div className="absolute inset-2.5 sm:inset-3.5 border-2 border-[#1F3D2B]/15 rounded-lg pointer-events-none" />
 
-                <a
-                  href={viewModalCert.pdfUrl || `${apiService.BACKEND_URL}/certificates/${viewModalCert.id}.pdf`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors"
-                >
-                  <FileText className="w-4 h-4" /> Open PDF in New Tab
-                </a>
+                    {/* Corner accents */}
+                    <div className="absolute top-4 left-4 w-6 h-6 border-t-2 border-l-2 border-[#C5A059]" />
+                    <div className="absolute top-4 right-4 w-6 h-6 border-t-2 border-r-2 border-[#C5A059]" />
+                    <div className="absolute bottom-4 left-4 w-6 h-6 border-b-2 border-l-2 border-[#C5A059]" />
+                    <div className="absolute bottom-4 right-4 w-6 h-6 border-b-2 border-r-2 border-[#C5A059]" />
+
+                    {/* Certificate Content Header */}
+                    <div className="text-center relative z-10 pt-2 pb-4 border-b border-[#C5A059]/30">
+                      <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-[#1F3D2B] text-xs font-bold tracking-wider uppercase mb-2 border border-emerald-200">
+                        <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                        Official Academic Credential
+                      </div>
+                      <h2
+                        className="text-xl sm:text-2xl font-black text-[#1F3D2B] tracking-wide"
+                        style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+                      >
+                        {viewModalCert.institution || 'GOVERNMENT POLYTECHNIC AMRAVATI'}
+                      </h2>
+                      <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-widest mt-0.5">
+                        Autonomous Institute of Government of Maharashtra • Established 1955
+                      </p>
+                    </div>
+
+                    {/* Certificate Main Title */}
+                    <div className="text-center my-5 relative z-10">
+                      <div className="text-xs uppercase tracking-widest text-[#C5A059] font-bold">
+                        Learn • Grow • Achieve
+                      </div>
+                      <h3
+                        className="text-2xl sm:text-3xl font-extrabold text-[#1F3D2B] tracking-tight mt-1"
+                        style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+                      >
+                        CERTIFICATE OF ACHIEVEMENT
+                      </h3>
+                      <div className="w-24 h-0.5 bg-[#C5A059] mx-auto mt-2 mb-4" />
+
+                      <p className="text-xs sm:text-sm text-gray-600 italic">This is to officially certify that</p>
+                      <h4
+                        className="text-2xl sm:text-3xl font-bold text-gray-900 my-2 tracking-wide text-emerald-950"
+                        style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+                      >
+                        {viewModalCert.studentName}
+                      </h4>
+                      <p className="text-xs text-gray-600 font-mono font-medium">
+                        Roll Number: <span className="text-gray-900 font-bold">{viewModalCert.rollNumber || 'N/A'}</span>
+                      </p>
+
+                      <p className="text-xs sm:text-sm text-gray-600 mt-3">
+                        has successfully completed the prescribed curriculum and examination for the program of
+                      </p>
+                      <div className="text-lg sm:text-xl font-bold text-[#1F3D2B] mt-1">
+                        {viewModalCert.course}
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        Department of {viewModalCert.department || 'Computer Engineering'}
+                      </p>
+
+                      <div className="inline-block mt-3 px-4 py-1 rounded-full bg-amber-50 text-amber-900 text-xs font-bold border border-amber-200">
+                        Grade Awarded: {viewModalCert.grade || 'First Class with Distinction'}
+                      </div>
+                    </div>
+
+                    {/* Certificate Lower Details: Verification, QR, and Signatures */}
+                    <div className="mt-6 pt-5 border-t border-[#C5A059]/30 grid grid-cols-1 sm:grid-cols-3 gap-4 items-end relative z-10 text-xs">
+                      {/* Left: Authority Signature */}
+                      <div className="text-center sm:text-left">
+                        <div className="h-10 flex items-center justify-center sm:justify-start">
+                          <span
+                            className="text-base sm:text-lg text-emerald-900 italic font-serif"
+                            style={{ fontFamily: "'Brush Script MT', cursive, serif" }}
+                          >
+                            Dr. V. M. Mohitkar
+                          </span>
+                        </div>
+                        <div className="w-32 border-t border-gray-400 mx-auto sm:mx-0 my-1" />
+                        <p className="font-bold text-gray-800">Head of Department</p>
+                        <p className="text-[10px] text-gray-500">Government Polytechnic Amravati</p>
+                      </div>
+
+                      {/* Middle: Blockchain Credential Seal & QR Code */}
+                      <div className="text-center flex flex-col items-center justify-center order-last sm:order-none">
+                        <div className="p-2 bg-white rounded-xl shadow-sm border border-gray-200">
+                          <QRCodeSVG
+                            value={verificationUrl}
+                            size={92}
+                            level="H"
+                            includeMargin={false}
+                          />
+                        </div>
+                        <span className="text-[10px] text-gray-500 font-semibold mt-1">
+                          Scan to Verify Live
+                        </span>
+                        <span className="text-[9px] text-[#1F3D2B] font-mono mt-0.5 font-bold">
+                          {certId}
+                        </span>
+                      </div>
+
+                      {/* Right: Principal Signature */}
+                      <div className="text-center sm:text-right">
+                        <div className="h-10 flex items-center justify-center sm:justify-end">
+                          <span
+                            className="text-base sm:text-lg text-emerald-900 italic font-serif"
+                            style={{ fontFamily: "'Brush Script MT', cursive, serif" }}
+                          >
+                            Prof. A. R. Patil
+                          </span>
+                        </div>
+                        <div className="w-32 border-t border-gray-400 mx-auto sm:ml-auto sm:mr-0 my-1" />
+                        <p className="font-bold text-gray-800">Principal / Registrar</p>
+                        <p className="text-[10px] text-gray-500">Date: {viewModalCert.issueDate}</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* ========================================================================= */
+                  /* PDF DOCUMENT VIEW EMBED WITH SECURE HTTPS URL                             */
+                  /* ========================================================================= */
+                  <div className="flex-1 flex flex-col space-y-3">
+                    <div className="flex items-center justify-between text-xs bg-emerald-50/70 p-3 rounded-xl border border-emerald-200 text-[#1F3D2B]">
+                      <span className="flex items-center gap-1.5 font-semibold">
+                        <FileCheck className="w-4 h-4 text-emerald-700" />
+                        Official PDFKit Document: {certId}.pdf
+                      </span>
+                      <a
+                        href={securePdfUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="font-bold text-[#1F3D2B] hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        Open Full Tab <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    </div>
+
+                    <div className="relative w-full h-[54vh] min-h-[420px] bg-gray-100 rounded-2xl overflow-hidden border border-gray-300 shadow-inner flex flex-col">
+                      <iframe
+                        src={securePdfUrl}
+                        title={`Certificate PDF ${certId}`}
+                        className="w-full flex-1 border-0"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Cryptographic Ledger Strip */}
+                <div className="bg-white rounded-2xl p-4 border border-gray-200 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs items-center shadow-sm">
+                  <div>
+                    <span className="text-gray-500 block font-semibold mb-0.5">Status:</span>
+                    <span
+                      className={`inline-block px-2.5 py-0.5 rounded-full font-bold text-[11px] border ${
+                        statusConfig[viewModalCert.status] || 'bg-gray-100'
+                      }`}
+                    >
+                      {viewModalCert.status}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-gray-500 block font-semibold mb-0.5">SHA-256 PDF Digest:</span>
+                    <div className="flex items-center gap-1.5 bg-gray-50 p-1.5 rounded-lg border border-gray-200 font-mono text-[10px] text-gray-700">
+                      <span className="truncate flex-1">{viewModalCert.sha256 || viewModalCert.hash}</span>
+                      <button
+                        onClick={() => copyHash(viewModalCert.sha256 || viewModalCert.hash)}
+                        className="p-1 hover:text-[#1F3D2B] text-gray-500 cursor-pointer"
+                        title="Copy full hash"
+                      >
+                        {copied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="md:text-right">
+                    <span className="text-gray-500 block font-semibold mb-0.5">Blockchain Ledger:</span>
+                    <button
+                      onClick={() => {
+                        setViewModalCert(null);
+                        navigate('/admin/blockchain');
+                      }}
+                      className="text-xs text-[#1F3D2B] font-semibold hover:underline inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <strong>{viewModalCert.blockNumber || 'Block #1'}</strong> (Inspect Ledger) <ExternalLink className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
               </div>
 
-              <button
-                onClick={() => setViewModalCert(null)}
-                className="px-6 py-2.5 bg-[#1F3D2B] text-white rounded-xl text-sm font-medium hover:bg-[#16281C] transition-colors cursor-pointer"
-              >
-                Close Preview
-              </button>
+              {/* Modal Footer Actions */}
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between gap-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleDownload(viewModalCert)}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-800 rounded-xl text-sm font-semibold hover:bg-gray-100 transition-colors shadow-sm cursor-pointer"
+                  >
+                    <Download className="w-4 h-4" /> Download PDF
+                  </button>
+
+                  <a
+                    href={securePdfUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-xl text-sm font-medium hover:bg-gray-200 transition-colors"
+                  >
+                    <FileText className="w-4 h-4" /> Open Full PDF in New Tab
+                  </a>
+                </div>
+
+                <button
+                  onClick={() => setViewModalCert(null)}
+                  className="px-6 py-2.5 bg-[#1F3D2B] text-white rounded-xl text-sm font-medium hover:bg-[#16281C] transition-colors cursor-pointer"
+                >
+                  Close Preview
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ========================================================================= */}
       {/* MODAL 2: REVOKE OR RESTORE CONFIRMATION                                   */}

@@ -24,3 +24,4 @@ uploads/
 .claude/
 # Local blockchain runtime data
 blockchain_ledger.json
+!backend/data/blockchain_ledger.json

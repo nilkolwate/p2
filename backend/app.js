@@ -99,13 +99,15 @@ app.use("/support",      contactRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/",         authRoutes); // Provides /admin-login and /verify-otp
 
-// ── Standalone QR Verification Page ───────────────────────────────────────
-// When QR is scanned on a phone it opens this URL directly in the browser
-
+// ── Standalone QR Verification Route ───────────────────────────────────────
+// When QR is scanned, automatically redirect to the live frontend verification page
 app.get("/verify", (req, res) => {
   const certId = req.query.id || req.query.certificateId;
-  if (certId) return res.redirect(`/verify/${encodeURIComponent(certId)}`);
-  res.redirect("/");
+  const frontendUrl = (process.env.FRONTEND_URL || "https://nilkolwate.github.io/p2").replace(/\/+$/, "");
+  if (certId) {
+    return res.redirect(302, `${frontendUrl}/#/verify/${encodeURIComponent(certId)}`);
+  }
+  return res.redirect(302, `${frontendUrl}/#/verify`);
 });
 
 app.get("/verify/:certificateId", (req, res) => {
@@ -113,6 +115,13 @@ app.get("/verify/:certificateId", (req, res) => {
     const rawId = req.params.certificateId;
     const certificateId =
       certificateService.extractCertificateIdFromQR(rawId) || rawId;
+    const frontendUrl = (process.env.FRONTEND_URL || "https://nilkolwate.github.io/p2").replace(/\/+$/, "");
+
+    // Allow ?format=html for explicit server-side debug view
+    if (req.query.format !== "html") {
+      return res.redirect(302, `${frontendUrl}/#/verify/${encodeURIComponent(certificateId)}`);
+    }
+
     const host = req.get("host") || "localhost:5000";
     const cert = certificateService.getCertificateById(certificateId, host);
 
@@ -142,7 +151,7 @@ app.get("/verify/:certificateId", (req, res) => {
             <p>No blockchain record exists for:</p>
             <div class="id">${certificateId}</div>
             <p>This certificate may not have been issued through BlockVault, or the ID may be incorrect.</p>
-            <a href="http://localhost:3000/verify">← Try Another Certificate</a>
+            <a href="${frontendUrl}/#/verify">← Try Another Certificate</a>
           </div>
         </body></html>
       `);
@@ -218,7 +227,7 @@ app.get("/verify/:certificateId", (req, res) => {
             <iframe src="${pdfUrl}" title="Certificate PDF"></iframe>
             <div style="text-align:center;margin-top:16px">
               <a class="btn" href="${pdfUrl}" download="Certificate_${cert.id}.pdf">⬇ Download PDF</a>
-              <a class="btn btn-outline" href="http://localhost:3000/verify">🔍 Verify Another</a>
+              <a class="btn btn-outline" href="${frontendUrl}/#/verify">🔍 Verify Another</a>
             </div>
           </div>
         </div>
