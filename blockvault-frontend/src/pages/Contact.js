@@ -70,7 +70,7 @@ export default function Contact() {
                   Thank you for reaching out, <strong>{formData.name}</strong>.
                 </p>
                 <p className="text-sm text-gray-500 mb-6">
-                  Your message was delivered to <strong>blockvault.support@gmail.com</strong>. We will get back to you shortly.
+                  Your message was delivered to <strong>blockvault123@gmail.com</strong>. We will get back to you shortly.
                 </p>
                 <button
                   type="button"
@@ -220,10 +220,10 @@ export default function Contact() {
                       Support Email
                     </span>
                     <a
-                      href="mailto:blockvault.support@gmail.com"
+                      href="mailto:blockvault123@gmail.com"
                       className="text-sm text-[#1F3D2B] font-medium hover:underline font-mono"
                     >
-                      blockvault.support@gmail.com
+                      blockvault123@gmail.com
                     </a>
                   </div>
                 </li>

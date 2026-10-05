@@ -94,7 +94,7 @@ async function sendViaBrevo({ to, replyTo, senderName, subject, html, text }) {
     const payload = JSON.stringify({
       sender: {
         name: "BlockVault Portal",
-        email: process.env.EMAIL_FROM || process.env.EMAIL_USER || "support@blockvault.internal",
+        email: process.env.MAIL_FROM || process.env.EMAIL_FROM || process.env.EMAIL_USER || "blockvault123@gmail.com",
       },
       to: [{ email: to }],
       replyTo: { email: replyTo, name: senderName || "Visitor" },
@@ -192,7 +192,7 @@ router.post("/", async (req, res) => {
   const recipient =
     process.env.CONTACT_RECIPIENT ||
     process.env.EMAIL_USER ||
-    "blockvault.support@gmail.com";
+    "blockvault123@gmail.com";
 
   const emailSubject = `[BlockVault Contact] ${msgSubject} - from ${senderName}`;
   const emailHtml = `
@@ -283,7 +283,7 @@ ${msgContent}
     if (transporter) {
       try {
         const info = await transporter.sendMail({
-          from: `"BlockVault Contact" <${process.env.EMAIL_USER}>`,
+          from: `"BlockVault Contact" <${process.env.MAIL_FROM || process.env.EMAIL_USER || "blockvault123@gmail.com"}>`,
           to: recipient,
           replyTo: senderEmail,
           subject: emailSubject,
