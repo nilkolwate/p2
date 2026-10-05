@@ -115,14 +115,6 @@ export default function HomePage() {
                 {/* Centered BlockVault Logo matching the colour scheme */}
                 <BlockVaultLogo className="w-40 h-40 lg:w-56 lg:h-56 transform group-hover:scale-105 transition-transform duration-500" />
               </div>
-              {/* Floating badge */}
-              <div className="absolute -bottom-2 right-2 lg:right-4 bg-white rounded-2xl shadow-lg px-5 py-3 flex items-center gap-3 border border-gray-100">
-                <BlockVaultLogo className="w-10 h-10" />
-                <div>
-                  <p className="text-sm font-semibold text-brand-charcoal">Blockchain Secured</p>
-                  <p className="text-xs text-gray-500">Tamper-proof records</p>
-                </div>
-              </div>
             </div>
           </div>
         </div>
