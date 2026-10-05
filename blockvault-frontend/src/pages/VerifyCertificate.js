@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { UploadCloud, CheckCircle, ArrowRight, FileText, QrCode, Camera, Image, RefreshCw, XCircle } from 'lucide-react';
-import jsQR from 'jsqr';
+import { UploadCloud, CheckCircle, ArrowRight, FileText, QrCode, Camera, Image, RefreshCw, XCircle, SwitchCamera } from 'lucide-react';
+import { Html5Qrcode } from 'html5-qrcode';
 import apiService from '../services/api';
 
 // Browser-side SHA-256 calculation for PDF verification (Module 3)
@@ -26,10 +26,14 @@ export default function VerifyCertificate() {
   const [qrTextInput, setQrTextInput] = useState('');
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [cameraError, setCameraError] = useState('');
-  const videoRef = useRef(null);
-  const canvasRef = useRef(null);
-  const animationFrameRef = useRef(null);
-  const isScanningRef = useRef(false);
+  const [availableCameras, setAvailableCameras] = useState([]);
+  const [currentCameraIndex, setCurrentCameraIndex] = useState(0);
+
+  const html5QrCodeRef = useRef(null);
+  const isStartingRef = useRef(false);
+  const isStoppingRef = useRef(false);
+  const isMountedRef = useRef(true);
+  const qrContainerId = 'bv-html5-qr-reader';
 
   // Check if opened from QR code scan (?id=...&hash=...)
   useEffect(() => {
@@ -44,10 +48,21 @@ export default function VerifyCertificate() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
-  // Clean up camera stream when unmounting or switching tabs
+  // Clean up camera stream when unmounting (guard against React StrictMode)
   useEffect(() => {
+    isMountedRef.current = true;
     return () => {
-      stopCamera();
+      isMountedRef.current = false;
+      const scanner = html5QrCodeRef.current;
+      if (scanner) {
+        if (scanner.isScanning) {
+          scanner.stop().catch(() => {}).then(() => {
+            try { scanner.clear(); } catch (_) {}
+          });
+        } else {
+          try { scanner.clear(); } catch (_) {}
+        }
+      }
     };
   }, []);
 
@@ -79,20 +94,26 @@ export default function VerifyCertificate() {
 
   const extractIdFromText = (text) => {
     if (!text) return '';
-    const trimmed = text.trim();
+    let trimmed = String(text).trim();
 
-    // 1. Direct ID (e.g. BV-2026-2293B257)
-    if (/^[A-Za-z0-9_-]+$/.test(trimmed) && trimmed.length >= 4 && trimmed.length <= 40) {
-      return trimmed;
+    // Decode URL encoding if present
+    try {
+      trimmed = decodeURIComponent(trimmed);
+    } catch (_) {}
+
+    // 1. Matches: /#/verify/ID or #/verify/ID
+    const hashMatch = trimmed.match(/#\/verify\/([A-Za-z0-9_-]+)/i);
+    if (hashMatch && hashMatch[1] && hashMatch[1].toLowerCase() !== 'result') {
+      return hashMatch[1];
     }
 
-    // 2. URL path: .../verify/CERT_ID
+    // 2. Matches URL path: /verify/ID
     const pathMatch = trimmed.match(/\/verify\/([A-Za-z0-9_-]+)/i);
     if (pathMatch && pathMatch[1] && pathMatch[1].toLowerCase() !== 'result') {
       return pathMatch[1];
     }
 
-    // 3. Query string: ?id=CERT_ID or ?certificateId=CERT_ID
+    // 3. Query string: ?id=ID or ?certificateId=ID
     const queryMatch = trimmed.match(/[?&](?:id|certificateId)=([A-Za-z0-9_-]+)/i);
     if (queryMatch && queryMatch[1]) {
       return queryMatch[1];
@@ -106,7 +127,9 @@ export default function VerifyCertificate() {
       }
     } catch (_) {}
 
-    return trimmed;
+    // 5. Raw string (strip any query/hash)
+    const rawClean = trimmed.split('?')[0].split('#')[0].trim();
+    return rawClean;
   };
 
   const processQRData = async (decodedString) => {
@@ -115,7 +138,7 @@ export default function VerifyCertificate() {
       return;
     }
 
-    stopCamera();
+    await stopCamera();
     setLoading(true);
     setError('');
 
@@ -179,107 +202,158 @@ export default function VerifyCertificate() {
     }
   };
 
-  // Decode QR from uploaded image file
-  const handleQRImageUpload = (e) => {
-    setError('');
-    const qrImageFile = e.target.files && e.target.files[0];
-    if (!qrImageFile) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new window.Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, img.width, img.height);
-        const imageData = ctx.getImageData(0, 0, img.width, img.height);
-
-        const code = jsQR(imageData.data, imageData.width, imageData.height, {
-          inversionAttempts: 'attemptBoth',
-        });
-        if (code && code.data) {
-          processQRData(code.data);
-        } else {
-          setError('Could not detect a valid QR code in this image. Please ensure the QR code is clear and well-lit.');
-        }
-      };
-      img.src = event.target.result;
-    };
-    reader.readAsDataURL(qrImageFile);
+  const getQrScanner = () => {
+    if (!html5QrCodeRef.current) {
+      html5QrCodeRef.current = new Html5Qrcode(qrContainerId);
+    }
+    return html5QrCodeRef.current;
   };
 
-  // Camera QR Scanner logic
-  const startCamera = async () => {
+  const stopCamera = async () => {
+    if (isStoppingRef.current) return;
+    isStoppingRef.current = true;
+    try {
+      const scanner = html5QrCodeRef.current;
+      if (scanner && scanner.isScanning) {
+        await scanner.stop();
+      }
+      if (scanner) {
+        scanner.clear();
+      }
+    } catch (err) {
+      console.warn('Camera stop error (ignored):', err);
+    } finally {
+      setIsCameraActive(false);
+      isStoppingRef.current = false;
+    }
+  };
+
+  const startCamera = async (cameraConfigOverride = null) => {
     setCameraError('');
     setError('');
 
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      setCameraError('Camera access requires HTTPS or a supported modern browser. You can upload a QR image or paste the code instead.');
+    // Check insecure context
+    if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      const insecureMsg = 'Camera access requires a secure context (HTTPS). Please open this site over HTTPS or use the QR image upload fallback.';
+      console.error('Camera Insecure Context Error:', insecureMsg);
+      setCameraError(insecureMsg);
       return;
     }
 
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      const noMediaMsg = 'Camera API (navigator.mediaDevices) is not supported in this browser. Please use the QR image upload fallback.';
+      console.error('Camera MediaDevices Error:', noMediaMsg);
+      setCameraError(noMediaMsg);
+      return;
+    }
+
+    if (isStartingRef.current) return;
+    isStartingRef.current = true;
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
-      });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.setAttribute('playsinline', 'true');
-        await videoRef.current.play();
-        isScanningRef.current = true;
-        setIsCameraActive(true);
-        animationFrameRef.current = requestAnimationFrame(scanVideoFrame);
-      }
-    } catch (err) {
-      console.error('Camera access error:', err);
-      isScanningRef.current = false;
-      setIsCameraActive(false);
-      setCameraError('Camera access denied or unavailable. You can upload a QR image or paste the code text instead.');
-    }
-  };
-
-  const stopCamera = () => {
-    isScanningRef.current = false;
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
-    }
-    if (videoRef.current && videoRef.current.srcObject) {
-      const stream = videoRef.current.srcObject;
-      stream.getTracks().forEach((track) => track.stop());
-      videoRef.current.srcObject = null;
-    }
-    setIsCameraActive(false);
-  };
-
-  const scanVideoFrame = () => {
-    if (!isScanningRef.current) return;
-
-    const video = videoRef.current;
-    if (video && video.readyState >= 2) {
-      const canvas = canvasRef.current || document.createElement('canvas');
-      canvas.width = video.videoWidth || 640;
-      canvas.height = video.videoHeight || 480;
-      const ctx = canvas.getContext('2d');
-      if (ctx && canvas.width > 0 && canvas.height > 0) {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
-        const code = jsQR(imageData.data, imageData.width, imageData.height, {
-          inversionAttempts: 'attemptBoth',
-        });
-        if (code && code.data) {
-          stopCamera();
-          processQRData(code.data);
-          return;
+      // Query cameras if not already queried
+      let cameras = availableCameras;
+      if (!cameras || cameras.length === 0) {
+        try {
+          const devices = await Html5Qrcode.getCameras();
+          if (devices && devices.length > 0) {
+            setAvailableCameras(devices);
+            cameras = devices;
+          }
+        } catch (camErr) {
+          console.warn('Could not enumerate camera devices:', camErr);
         }
       }
-    }
 
-    if (isScanningRef.current) {
-      animationFrameRef.current = requestAnimationFrame(scanVideoFrame);
+      const scanner = getQrScanner();
+      if (scanner.isScanning) {
+        await scanner.stop();
+      }
+
+      setIsCameraActive(true);
+
+      const cameraConfig = cameraConfigOverride
+        ? cameraConfigOverride
+        : (cameras && cameras.length > 0 && cameras[currentCameraIndex]?.id)
+        ? { deviceId: { exact: cameras[currentCameraIndex].id } }
+        : { facingMode: 'environment' };
+
+      const qrboxResponsive = (viewfinderWidth, viewfinderHeight) => {
+        const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+        const qrboxSize = Math.floor(minEdge * 0.75);
+        return {
+          width: Math.max(qrboxSize, 220),
+          height: Math.max(qrboxSize, 220),
+        };
+      };
+
+      const config = {
+        fps: 10,
+        qrbox: qrboxResponsive,
+        aspectRatio: 1.0,
+      };
+
+      await scanner.start(
+        cameraConfig,
+        config,
+        async (decodedText) => {
+          console.log('Camera scanned QR code successfully:', decodedText);
+          await stopCamera();
+          processQRData(decodedText);
+        },
+        (errorMessage) => {
+          // Frame-level scan failure, safe to ignore
+        }
+      );
+    } catch (err) {
+      console.error('Camera scan error:', err);
+      setIsCameraActive(false);
+
+      const errName = err?.name || '';
+      const errMsg = err?.message || String(err);
+
+      if (errName === 'NotAllowedError' || errName === 'PermissionDeniedError' || /NotAllowedError|Permission/i.test(errMsg)) {
+        setCameraError('Camera permission was denied. Please allow camera access in your browser permissions and try again.');
+      } else if (errName === 'NotFoundError' || errName === 'DevicesNotFoundError' || /NotFoundError|no camera/i.test(errMsg)) {
+        setCameraError('No camera device found on this system. You can upload a QR image or enter the Certificate ID below.');
+      } else {
+        setCameraError(`Camera error (${errName || 'Notice'}): ${errMsg || 'Unable to open camera'}. You can upload a QR image instead.`);
+      }
+    } finally {
+      isStartingRef.current = false;
+    }
+  };
+
+  const switchCamera = async () => {
+    if (availableCameras.length <= 1) return;
+    const nextIndex = (currentCameraIndex + 1) % availableCameras.length;
+    setCurrentCameraIndex(nextIndex);
+    const nextCamera = availableCameras[nextIndex];
+    await stopCamera();
+    setTimeout(() => {
+      startCamera({ deviceId: { exact: nextCamera.id } });
+    }, 150);
+  };
+
+  const handleQRImageUpload = async (e) => {
+    setError('');
+    setCameraError('');
+    const qrImageFile = e.target.files && e.target.files[0];
+    if (!qrImageFile) return;
+
+    try {
+      setLoading(true);
+      await stopCamera();
+      const scanner = getQrScanner();
+      const decodedText = await scanner.scanFile(qrImageFile, true);
+      console.log('Decoded QR via scanFile:', decodedText);
+      processQRData(decodedText);
+    } catch (err) {
+      console.error('scanFile error:', err);
+      setError('Could not detect a valid QR code in this image. Please ensure the QR code is clearly visible and well-lit.');
+    } finally {
+      setLoading(false);
+      if (e.target) e.target.value = '';
     }
   };
 
@@ -483,31 +557,49 @@ export default function VerifyCertificate() {
             {/* TAB 1: SCAN QR CODE */}
             {activeTab === 'qr' && (
               <div className="space-y-6">
-                {/* Camera Scanner View */}
-                {isCameraActive ? (
-                  <div className="relative rounded-2xl overflow-hidden bg-black border-2 border-[#1F3D2B] shadow-inner text-center">
-                    <video ref={videoRef} className="w-full h-64 object-cover" />
-                    <canvas ref={canvasRef} className="hidden" />
-                    <div className="absolute inset-0 border-2 border-white/40 pointer-events-none flex items-center justify-center">
-                      <div className="w-48 h-48 border-2 border-emerald-400 rounded-xl animate-pulse" />
+                {/* HTML5 QR Code Scanner View Container */}
+                <div
+                  id="bv-html5-qr-reader"
+                  className={`w-full rounded-2xl overflow-hidden bg-black shadow-inner ${
+                    isCameraActive ? 'block' : 'hidden'
+                  }`}
+                />
+
+                {/* Camera Active Controls */}
+                {isCameraActive && (
+                  <div className="p-3 bg-gray-900 text-white rounded-xl flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <span className="text-xs text-gray-200 font-medium">Scanning for QR code (10 FPS)...</span>
                     </div>
-                    <div className="p-3 bg-black/75 text-white flex items-center justify-between">
-                      <span className="text-xs text-emerald-300 font-medium">Scanning for QR code...</span>
+                    <div className="flex items-center gap-2">
+                      {availableCameras.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={switchCamera}
+                          className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
+                        >
+                          <SwitchCamera size={14} /> Switch Camera
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={stopCamera}
-                        className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold"
+                        className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-xs font-semibold cursor-pointer transition-colors"
                       >
                         Stop Camera
                       </button>
                     </div>
                   </div>
-                ) : (
+                )}
+
+                {/* Camera Inactive Options */}
+                {!isCameraActive && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Option A: Start Camera */}
                     <button
                       type="button"
-                      onClick={startCamera}
+                      onClick={() => startCamera()}
                       className="p-6 rounded-2xl border-2 border-dashed border-gray-300 hover:border-[#1F3D2B] hover:bg-green-50/40 transition-all flex flex-col items-center justify-center gap-3 cursor-pointer group"
                     >
                       <div className="w-12 h-12 rounded-full bg-green-100 text-[#1F3D2B] flex items-center justify-center group-hover:scale-110 transition-transform">
@@ -532,7 +624,7 @@ export default function VerifyCertificate() {
                       </div>
                       <div>
                         <p className="font-semibold text-gray-900 text-sm">Upload QR Image</p>
-                        <p className="text-xs text-gray-500 mt-0.5">PNG, JPG, or screenshot</p>
+                        <p className="text-xs text-gray-500 mt-0.5">Scan image using scanFile</p>
                       </div>
                     </label>
                   </div>

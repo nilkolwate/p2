@@ -94,7 +94,7 @@ async function sendViaBrevo({ to, replyTo, senderName, subject, html, text }) {
     const payload = JSON.stringify({
       sender: {
         name: "BlockVault Portal",
-        email: process.env.MAIL_FROM || process.env.EMAIL_FROM || process.env.EMAIL_USER || "blockvault123@gmail.com",
+        email: process.env.MAIL_FROM || process.env.EMAIL_FROM || process.env.EMAIL_USER || "onboarding@resend.dev",
       },
       to: [{ email: to }],
       replyTo: { email: replyTo, name: senderName || "Visitor" },
@@ -189,10 +189,17 @@ router.post("/", async (req, res) => {
   }
 
   // 2. Prepare email payload
-  const recipient =
-    process.env.CONTACT_RECIPIENT ||
-    process.env.EMAIL_USER ||
-    "blockvault123@gmail.com";
+  const recipient = (process.env.SUPPORT_EMAIL || process.env.EMAIL_USER || "").trim();
+  if (!recipient) {
+    console.error("Support email error: neither SUPPORT_EMAIL nor EMAIL_USER is configured.");
+    return res.status(500).json({
+      success: false,
+      saved: true,
+      emailSent: false,
+      message: "Server configuration error: SUPPORT_EMAIL is not set. Please set SUPPORT_EMAIL in Render environment.",
+      error: "SUPPORT_EMAIL_MISSING",
+    });
+  }
 
   const emailSubject = `[BlockVault Contact] ${msgSubject} - from ${senderName}`;
   const emailHtml = `
@@ -283,7 +290,7 @@ ${msgContent}
     if (transporter) {
       try {
         const info = await transporter.sendMail({
-          from: `"BlockVault Contact" <${process.env.MAIL_FROM || process.env.EMAIL_USER || "blockvault123@gmail.com"}>`,
+          from: `"BlockVault Contact" <${process.env.MAIL_FROM || process.env.EMAIL_USER || recipient}>`,
           to: recipient,
           replyTo: senderEmail,
           subject: emailSubject,
@@ -294,8 +301,15 @@ ${msgContent}
         deliveryProvider = "Nodemailer SMTP";
         console.log("Contact email sent via SMTP, messageId:", info.messageId);
       } catch (smtpErr) {
-        console.error("SMTP delivery error on Render:", smtpErr.message);
-        emailError = `SMTP: ${smtpErr.message}`;
+        console.error("Nodemailer SMTP delivery error:", {
+          name: smtpErr.name,
+          code: smtpErr.code,
+          message: smtpErr.message,
+          response: smtpErr.response,
+          responseCode: smtpErr.responseCode,
+          command: smtpErr.command,
+        });
+        emailError = `SMTP ${smtpErr.code || smtpErr.name || 'Error'}: ${smtpErr.message}`;
       }
     } else if (!deliveryProvider) {
       emailError = "No email credentials configured (RESEND_API_KEY, BREVO_API_KEY, or EMAIL_USER/PASSWORD).";
@@ -303,16 +317,25 @@ ${msgContent}
   }
 
   // Return response
-  return res.json({
+  if (!emailSent) {
+    return res.status(502).json({
+      success: false,
+      saved: true,
+      emailSent: false,
+      provider: deliveryProvider,
+      inquiryId: inquiryRecord.id,
+      message: `Inquiry saved to server records, but outbound email delivery failed: ${emailError || "No email provider configured"}.`,
+      error: emailError,
+    });
+  }
+
+  return res.status(200).json({
     success: true,
     saved: true,
-    emailSent,
+    emailSent: true,
     provider: deliveryProvider,
     inquiryId: inquiryRecord.id,
-    message: emailSent
-      ? "Your message has been sent successfully to the BlockVault team!"
-      : "Your inquiry has been received and safely logged for the administrative team.",
-    ...(emailError && !emailSent ? { emailNote: emailError } : {}),
+    message: "Your message has been delivered successfully to the BlockVault support team!",
   });
 });
 

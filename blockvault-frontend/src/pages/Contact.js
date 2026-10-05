@@ -12,6 +12,7 @@ export default function Contact() {
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   const handleChange = (e) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -25,13 +26,14 @@ export default function Contact() {
     try {
       const res = await apiService.sendContactMessage(formData);
       if (res && res.success) {
+        setSuccessMessage(res.message || 'Your message has been delivered successfully to the BlockVault support team!');
         setSubmitted(true);
       } else {
-        setError(res?.message || 'Failed to send email. Please try again.');
+        setError(res?.message || 'Failed to send message. Please try again.');
       }
     } catch (err) {
       console.error('Contact email error:', err);
-      setError('Unable to connect to the email server. Please ensure the backend is running.');
+      setError(err?.response?.data?.message || err?.message || 'Unable to connect to the email server. Please ensure the backend is running.');
     } finally {
       setLoading(false);
     }
@@ -70,7 +72,7 @@ export default function Contact() {
                   Thank you for reaching out, <strong>{formData.name}</strong>.
                 </p>
                 <p className="text-sm text-gray-500 mb-6">
-                  Your message was delivered to <strong>blockvault123@gmail.com</strong>. We will get back to you shortly.
+                  {successMessage || 'Your message has been delivered to the BlockVault support team. We will get back to you shortly.'}
                 </p>
                 <button
                   type="button"
@@ -217,14 +219,11 @@ export default function Contact() {
                   </div>
                   <div>
                     <span className="text-xs text-gray-400 font-medium uppercase tracking-wider block">
-                      Support Email
+                      Support Inquiries
                     </span>
-                    <a
-                      href="mailto:blockvault123@gmail.com"
-                      className="text-sm text-[#1F3D2B] font-medium hover:underline font-mono"
-                    >
-                      blockvault123@gmail.com
-                    </a>
+                    <span className="text-sm text-[#1F3D2B] font-medium">
+                      Direct Inquiries via Contact Form
+                    </span>
                   </div>
                 </li>
 
