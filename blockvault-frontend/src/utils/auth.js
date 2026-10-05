@@ -1,14 +1,27 @@
 // BlockVault Admin Authentication Utilities
-// Manages real JWT session storage and authorization state
+// Manages real JWT session storage strictly in sessionStorage (tab-scoped)
 
 const TOKEN_KEY = 'blockvault_auth_token';
 const USER_KEY = 'blockvault_auth_user';
 
+// Clean up any stale localStorage tokens from previous versions
+try {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+  localStorage.removeItem('blockvault_admin_session');
+} catch (e) {
+  // Ignore in restricted environments
+}
+
 /**
- * Get stored JWT authorization token
+ * Get stored JWT authorization token from sessionStorage
  */
 export const getToken = () => {
-  return localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY) || null;
+  try {
+    return sessionStorage.getItem(TOKEN_KEY) || null;
+  } catch (e) {
+    return null;
+  }
 };
 
 /**
@@ -20,12 +33,12 @@ export const isAdminAuthenticated = () => {
 };
 
 /**
- * Retrieve the current logged-in admin user details
+ * Retrieve the current logged-in admin user details from sessionStorage
  */
 export const getAdminUser = () => {
-  const userStr = localStorage.getItem(USER_KEY) || sessionStorage.getItem(USER_KEY);
-  if (!userStr) return null;
   try {
+    const userStr = sessionStorage.getItem(USER_KEY);
+    if (!userStr) return null;
     return JSON.parse(userStr);
   } catch (e) {
     return null;
@@ -33,19 +46,23 @@ export const getAdminUser = () => {
 };
 
 /**
- * Store the authenticated session (token + user payload)
+ * Store the authenticated session (token + user payload) strictly in sessionStorage
+ * Closing the browser tab automatically terminates the session.
  */
-export const setAdminSession = (token, user, rememberMe = true) => {
-  const storage = rememberMe ? localStorage : sessionStorage;
-  // Clear any existing session in opposite storage
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(USER_KEY);
-  sessionStorage.removeItem(TOKEN_KEY);
-  sessionStorage.removeItem(USER_KEY);
+export const setAdminSession = (token, user) => {
+  try {
+    // Clear any potential leftover in localStorage
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
 
-  storage.setItem(TOKEN_KEY, token);
-  if (user) {
-    storage.setItem(USER_KEY, JSON.stringify(user));
+    if (token) {
+      sessionStorage.setItem(TOKEN_KEY, token);
+    }
+    if (user) {
+      sessionStorage.setItem(USER_KEY, JSON.stringify(user));
+    }
+  } catch (e) {
+    console.error('Failed to save session to sessionStorage:', e);
   }
 };
 
@@ -53,8 +70,13 @@ export const setAdminSession = (token, user, rememberMe = true) => {
  * Log out the admin user and clear all stored session tokens
  */
 export const logoutAdmin = () => {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(USER_KEY);
-  sessionStorage.removeItem(TOKEN_KEY);
-  sessionStorage.removeItem(USER_KEY);
+  try {
+    sessionStorage.removeItem(TOKEN_KEY);
+    sessionStorage.removeItem(USER_KEY);
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+    localStorage.removeItem('blockvault_admin_session');
+  } catch (e) {
+    // Ignore
+  }
 };

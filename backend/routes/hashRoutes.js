@@ -15,9 +15,9 @@ const certificateService = require("../services/certificateService");
 
 const router = express.Router();
 
-// ── POST /api/hash/generate ──────────────────────────────────────────────────
+// ── POST /api/hash or /api/hash/generate ─────────────────────────────────────
 // Accepts { text } or { data } (JSON object) in request body
-router.post("/generate", (req, res) => {
+router.post(["/", "/generate"], (req, res) => {
   try {
     const { text, data } = req.body;
     const input = text || (data ? JSON.stringify(data) : "");

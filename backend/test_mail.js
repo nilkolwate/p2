@@ -1,35 +1,45 @@
+require('dotenv').config();
 const nodemailer = require('nodemailer');
 
+const user = process.env.EMAIL_USER;
+const pass = process.env.EMAIL_PASSWORD;
+
+if (!user || !pass) {
+  console.error('EMAIL_USER and EMAIL_PASSWORD must be configured in environment.');
+  process.exit(1);
+}
+
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: 'blockvault.support@gmail.com',
-    pass: 'vwuwhbvaxwrcgpkh'
-  }
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
+  auth: { user, pass },
+  tls: { rejectUnauthorized: false },
+  connectionTimeout: 10000,
 });
 
 transporter.verify((err, success) => {
   if (err) {
-    console.error('Verify error:', err);
+    console.error('Verify error:', err.message);
   } else {
     console.log('Transporter is ready:', success);
   }
 });
 
 transporter.sendMail({
-  from: 'blockvault.support@gmail.com',
-  to: 'blockvault.support@gmail.com',
-  subject: 'BlockVault Live Test Delivery',
-  text: 'Testing direct delivery to blockvault.support@gmail.com'
+  from: user,
+  to: user,
+  subject: 'BlockVault Live Test Delivery ' + new Date().toISOString(),
+  text: 'Testing direct delivery to ' + user,
 }, (err, info) => {
   if (err) {
-    console.error('Send error:', err);
+    console.error('Send error:', err.message);
   } else {
     console.log('Delivery result:', {
       accepted: info.accepted,
       rejected: info.rejected,
       response: info.response,
-      messageId: info.messageId
+      messageId: info.messageId,
     });
   }
 });

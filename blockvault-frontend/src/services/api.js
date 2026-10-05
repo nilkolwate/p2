@@ -160,14 +160,16 @@ const sendContactMessage = (data) => post('/contact', data);
 // ─────────────────────────────────────────────────────────────────────────
 // ADMIN AUTH (Real backend JWT authentication)
 // ─────────────────────────────────────────────────────────────────────────
-const adminLogin = async ({ username, email, password, rememberMe = true }) => {
+const adminLogin = async ({ username, email, password }) => {
   const userIdentifier = username || email;
   const res = await post('/auth/login', { username: userIdentifier, password });
   if (res && res.success && res.token) {
-    setAdminSession(res.token, res.user, rememberMe);
+    setAdminSession(res.token, res.user);
   }
   return res;
 };
+
+const verifyToken = () => get('/auth/me');
 
 // ─────────────────────────────────────────────────────────────────────────
 // EXPORT — named exports + default object
@@ -204,6 +206,7 @@ const apiService = {
   sendContactMessage,
   // Auth
   adminLogin,
+  verifyToken,
   // URLs & Helpers
   API_URL,
   API_BASE: cleanBaseUrl,

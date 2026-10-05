@@ -69,4 +69,19 @@ router.post(['/login', '/admin-login'], (req, res) => {
   });
 });
 
+/**
+ * GET /api/auth/me (or /me)
+ * Validates the currently supplied JWT token and returns admin profile.
+ */
+const requireAuth = require('../middleware/auth');
+
+router.get(['/me', '/verify-token'], requireAuth, (req, res) => {
+  return res.json({
+    success: true,
+    message: 'Token is valid and active.',
+    user: req.user,
+  });
+});
+
 module.exports = router;
+

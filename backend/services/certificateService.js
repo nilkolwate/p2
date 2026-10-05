@@ -4,7 +4,7 @@ const crypto = require("crypto");
 const os = require("os");
 
 const { generateCertificateId } = require("../utils/certificateId");
-const { generateQRCode, generateQRCodeDataURL } = require("./qrService");
+const { generateQRCode, generateQRCodeDataURL, getVerificationUrl } = require("./qrService");
 const { createCertificatePDF } = require("./pdfService");
 const blockchain = require("../blockchain/Blockchain");
 
@@ -83,11 +83,8 @@ function extractCertificateIdFromQR(qrData) {
 async function generateCertificate(data, hostHeader = null) {
   const collegeName = data.institution || "Government Polytechnic Amravati";
   const certificateId = data.certificateId || generateCertificateId();
-  const localIP = getLocalIPv4();
-
-  // For QR code: prefer local Wi-Fi IP so mobile devices on the same Wi-Fi can scan & open
-  const hostForQR = (localIP && localIP !== "127.0.0.1") ? `${localIP}:5000` : (hostHeader || "localhost:5000");
-  const verificationUrl = `http://${hostForQR}/verify/${certificateId}`;
+  // For QR code: encode canonical frontend URL (HashRouter https://nilkolwate.github.io/p2/#/verify/<certificateId>)
+  const verificationUrl = getVerificationUrl(certificateId);
 
   // Generate QR buffer for PDFKit and DataURL for frontend preview
   const qrBuffer = await generateQRCode(verificationUrl);
@@ -191,7 +188,7 @@ function getAllCertificates(hostHeader = null) {
         sha256: content.hash || content.sha256 || "",
         blockNumber: content.blockNumber || "Block #1",
         issuer: content.issuer || "Office of the Registrar",
-        verificationUrl: `http://${currentHost}/verify/${certId}`,
+        verificationUrl: getVerificationUrl(certId),
         qrDataUrl: content.qrDataUrl,
         pdfUrl: `http://${currentHost}/certificates/${pdfFileName}`,
         revocationReason: content.revocationReason,
@@ -235,7 +232,7 @@ function getCertificateById(certificateId, hostHeader = null) {
       sha256: content.hash || content.sha256,
       blockNumber: content.blockNumber || "Block #1",
       issuer: content.issuer || "Office of the Registrar",
-      verificationUrl: `http://${currentHost}/verify/${certId}`,
+      verificationUrl: getVerificationUrl(certId),
       qrDataUrl: content.qrDataUrl,
       pdfUrl: `http://${currentHost}/certificates/${certId}.pdf`,
       revocationReason: content.revocationReason

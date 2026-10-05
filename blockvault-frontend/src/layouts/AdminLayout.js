@@ -10,7 +10,6 @@ import {
   Settings,
   LogOut,
   Search,
-  Menu,
   X,
   Shield,
   CheckCircle,
@@ -19,6 +18,7 @@ import {
   Check,
 } from 'lucide-react';
 import { isAdminAuthenticated, logoutAdmin, getAdminUser } from '../utils/auth';
+import AdminNavbar from '../components/AdminNavbar';
 
 const sidebarLinks = [
   { to: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
@@ -181,15 +181,12 @@ const AdminLayout = () => {
 
       {/* Main content area */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top bar */}
-        <header className="sticky top-0 z-30 bg-brand-cream border-b border-brand-beige/60 px-4 lg:px-8 py-3">
+        {/* Top Navbar with Public Site links + Mobile toggle + Logout */}
+        <AdminNavbar onToggleSidebar={() => setSidebarOpen(true)} />
+
+        {/* Secondary Sub-header: Search & Notifications */}
+        <header className="bg-brand-cream/80 border-b border-brand-beige/50 px-4 lg:px-8 py-2.5">
           <div className="flex items-center gap-4">
-            <button
-              className="lg:hidden text-brand-charcoal hover:text-brand-green"
-              onClick={() => setSidebarOpen(true)}
-            >
-              <Menu className="w-6 h-6" />
-            </button>
 
             {/* Search */}
             <div className="flex-1 max-w-md">

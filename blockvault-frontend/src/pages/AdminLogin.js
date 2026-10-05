@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Shield, User, Lock, Eye, EyeOff, ArrowRight, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
-import { isAdminAuthenticated } from '../utils/auth';
 import apiService from '../services/api';
 
 export default function AdminLogin() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -16,20 +14,14 @@ export default function AdminLogin() {
   const location = useLocation();
 
   useEffect(() => {
-    // If already authenticated, go directly to admin
-    if (isAdminAuthenticated()) {
-      navigate('/admin');
-      return;
-    }
-
     // Check if redirected due to unauthorized access or expired session
     const searchParams = new URLSearchParams(location.search);
     if (searchParams.get('unauthorized') === 'true') {
       setError('Access Restricted: You must log in as Administrator to access the admin panel.');
     } else if (searchParams.get('sessionExpired') === 'true') {
-      setError('Session Expired: Your session has expired. Please log in again.');
+      setError('Session Expired: Your session has expired or is invalid. Please log in again.');
     }
-  }, [location, navigate]);
+  }, [location]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -41,14 +33,13 @@ export default function AdminLogin() {
       const result = await apiService.adminLogin({
         username: username.trim(),
         password: password.trim(),
-        rememberMe,
       });
 
       if (result && result.success && result.token) {
         setSuccess('Authentication successful! Loading administrator panel...');
         setTimeout(() => {
           navigate('/admin');
-        }, 400);
+        }, 300);
       } else {
         setError(result?.message || 'Access Denied: Invalid username or password.');
       }
@@ -166,20 +157,6 @@ export default function AdminLogin() {
                   )}
                 </button>
               </div>
-            </div>
-
-            {/* Remember Me */}
-            <div className="flex items-center justify-between text-sm">
-              <label className="flex items-center gap-2 text-gray-600 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  disabled={loading}
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-300 text-[#1F3D2B] focus:ring-[#1F3D2B]"
-                />
-                Remember me
-              </label>
             </div>
 
             {/* Submit Button */}
