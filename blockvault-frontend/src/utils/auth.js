@@ -1,74 +1,60 @@
-// BlockVault Admin Authentication Utility
+// BlockVault Admin Authentication Utilities
+// Manages real JWT session storage and authorization state
 
-const ADMIN_SESSION_KEY = 'blockvault_admin_session';
-
-export const ADMIN_CREDENTIALS = {
-  username: 'Administrator',
-  password: 'Admin@123',
-};
+const TOKEN_KEY = 'blockvault_auth_token';
+const USER_KEY = 'blockvault_auth_user';
 
 /**
- * Attempt admin login with provided credentials
- * Strictly accepts only username: 'Administrator' and password: 'Admin@123'
+ * Get stored JWT authorization token
  */
-export const loginAdmin = (username, password) => {
-  const trimmedUser = (username || '').trim();
-  const trimmedPass = (password || '').trim();
-
-  if (trimmedUser === ADMIN_CREDENTIALS.username && trimmedPass === ADMIN_CREDENTIALS.password) {
-    const sessionData = {
-      username: ADMIN_CREDENTIALS.username,
-      displayName: 'Administrator',
-      role: 'Super Admin',
-      email: ADMIN_CREDENTIALS.username,
-      token: 'bv_sec_token_' + Math.random().toString(36).substring(2) + Date.now().toString(36),
-      loginTime: new Date().toISOString(),
-    };
-
-    localStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(sessionData));
-    sessionStorage.setItem(ADMIN_SESSION_KEY, JSON.stringify(sessionData));
-    return { success: true, user: sessionData };
-  }
-
-  return {
-    success: false,
-    message: 'Access Denied: Invalid username or password. Only authorized administrators can access this panel.',
-  };
+export const getToken = () => {
+  return localStorage.getItem(TOKEN_KEY) || sessionStorage.getItem(TOKEN_KEY) || null;
 };
 
 /**
- * Check if the admin is currently authenticated
+ * Check if the admin is currently authenticated with a stored JWT token
  */
 export const isAdminAuthenticated = () => {
-  const session = localStorage.getItem(ADMIN_SESSION_KEY) || sessionStorage.getItem(ADMIN_SESSION_KEY);
-  if (!session) return false;
-
-  try {
-    const parsed = JSON.parse(session);
-    return parsed && parsed.email === ADMIN_CREDENTIALS.username;
-  } catch (e) {
-    return false;
-  }
+  const token = getToken();
+  return Boolean(token);
 };
 
 /**
- * Retrieve the current logged-in admin user
+ * Retrieve the current logged-in admin user details
  */
 export const getAdminUser = () => {
-  const session = localStorage.getItem(ADMIN_SESSION_KEY) || sessionStorage.getItem(ADMIN_SESSION_KEY);
-  if (!session) return null;
-
+  const userStr = localStorage.getItem(USER_KEY) || sessionStorage.getItem(USER_KEY);
+  if (!userStr) return null;
   try {
-    return JSON.parse(session);
+    return JSON.parse(userStr);
   } catch (e) {
     return null;
   }
 };
 
 /**
- * Log out the admin user
+ * Store the authenticated session (token + user payload)
+ */
+export const setAdminSession = (token, user, rememberMe = true) => {
+  const storage = rememberMe ? localStorage : sessionStorage;
+  // Clear any existing session in opposite storage
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+  sessionStorage.removeItem(TOKEN_KEY);
+  sessionStorage.removeItem(USER_KEY);
+
+  storage.setItem(TOKEN_KEY, token);
+  if (user) {
+    storage.setItem(USER_KEY, JSON.stringify(user));
+  }
+};
+
+/**
+ * Log out the admin user and clear all stored session tokens
  */
 export const logoutAdmin = () => {
-  localStorage.removeItem(ADMIN_SESSION_KEY);
-  sessionStorage.removeItem(ADMIN_SESSION_KEY);
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+  sessionStorage.removeItem(TOKEN_KEY);
+  sessionStorage.removeItem(USER_KEY);
 };

@@ -15,6 +15,7 @@ import ReportsAnalytics from './pages/admin/ReportsAnalytics';
 import UsersManagement from './pages/admin/UsersManagement';
 import Notifications from './pages/admin/Notifications';
 import Settings from './pages/admin/Settings';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
@@ -32,15 +33,17 @@ function App() {
           <Route path="/login" element={<AdminLogin />} />
         </Route>
 
-        {/* Admin routes */}
-        <Route element={<AdminLayout />}>
-          <Route path="/admin" element={<Dashboard />} />
-          <Route path="/admin/certificates" element={<CertificatesManagement />} />
-          <Route path="/admin/users" element={<UsersManagement />} />
-          <Route path="/admin/blockchain" element={<BlockchainRecords />} />
-          <Route path="/admin/reports" element={<ReportsAnalytics />} />
-          <Route path="/admin/notifications" element={<Notifications />} />
-          <Route path="/admin/settings" element={<Settings />} />
+        {/* Admin routes (protected by real JWT authentication) */}
+        <Route element={<ProtectedRoute />}>
+          <Route element={<AdminLayout />}>
+            <Route path="/admin" element={<Dashboard />} />
+            <Route path="/admin/certificates" element={<CertificatesManagement />} />
+            <Route path="/admin/users" element={<UsersManagement />} />
+            <Route path="/admin/blockchain" element={<BlockchainRecords />} />
+            <Route path="/admin/reports" element={<ReportsAnalytics />} />
+            <Route path="/admin/notifications" element={<Notifications />} />
+            <Route path="/admin/settings" element={<Settings />} />
+          </Route>
         </Route>
       </Routes>
     </Router>

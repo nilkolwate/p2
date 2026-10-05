@@ -5,6 +5,8 @@
  * Uses REACT_APP_API_URL env var, falling back to CRA's proxy (/api/...).
  */
 
+import { getToken, setAdminSession, logoutAdmin } from '../utils/auth';
+
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
 const cleanBaseUrl = API_URL.replace(/\/+$/, '');
 const BACKEND_URL = cleanBaseUrl.replace(/\/api\/?$/, '');
@@ -23,7 +25,11 @@ function buildUrl(endpoint) {
 
 // ── Generic fetch wrapper with error handling ────────────────────────────
 async function request(method, endpoint, body = null, isFormData = false) {
-  const headers = isFormData ? {} : { 'Content-Type': 'application/json' };
+  const token = getToken();
+  const headers = {
+    ...(isFormData ? {} : { 'Content-Type': 'application/json' }),
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
 
   const options = {
     method,
@@ -34,6 +40,16 @@ async function request(method, endpoint, body = null, isFormData = false) {
   try {
     const url = buildUrl(endpoint);
     const response = await fetch(url, options);
+
+    // If 401 Unauthorized received on a protected request, clear session and redirect
+    if (response.status === 401 && !endpoint.includes('/auth/login')) {
+      logoutAdmin();
+      const currentHash = window.location.hash || '';
+      if (!currentHash.includes('/login')) {
+        window.location.hash = '#/login?sessionExpired=true';
+      }
+    }
+
     const data = await response.json();
 
     // Attach HTTP status to the returned object for error diagnosis
@@ -142,18 +158,15 @@ const getNotifications  = () => get('/notifications');
 const sendContactMessage = (data) => post('/contact', data);
 
 // ─────────────────────────────────────────────────────────────────────────
-// ADMIN AUTH (client-side only — no real JWT in this build)
+// ADMIN AUTH (Real backend JWT authentication)
 // ─────────────────────────────────────────────────────────────────────────
-const adminLogin = ({ email, password }) => {
-  // Simple client-side credential check (no server-side JWT)
-  const validEmail    = process.env.REACT_APP_ADMIN_EMAIL    || 'admin@blockvault.edu';
-  const validPassword = process.env.REACT_APP_ADMIN_PASSWORD || 'BlockVault@2025';
-
-  if (email === validEmail && password === validPassword) {
-    const token = btoa(JSON.stringify({ email, role: 'admin', exp: Date.now() + 8 * 60 * 60 * 1000 }));
-    return Promise.resolve({ success: true, token, user: { email, role: 'admin' } });
+const adminLogin = async ({ username, email, password, rememberMe = true }) => {
+  const userIdentifier = username || email;
+  const res = await post('/auth/login', { username: userIdentifier, password });
+  if (res && res.success && res.token) {
+    setAdminSession(res.token, res.user, rememberMe);
   }
-  return Promise.resolve({ success: false, message: 'Invalid email or password.' });
+  return res;
 };
 
 // ─────────────────────────────────────────────────────────────────────────

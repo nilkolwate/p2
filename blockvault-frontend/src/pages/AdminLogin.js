@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Shield, User, Lock, Eye, EyeOff, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react';
-import { loginAdmin, isAdminAuthenticated } from '../utils/auth';
+import { Shield, User, Lock, Eye, EyeOff, ArrowRight, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { isAdminAuthenticated } from '../utils/auth';
+import apiService from '../services/api';
 
 export default function AdminLogin() {
   const [username, setUsername] = useState('');
@@ -10,6 +11,7 @@ export default function AdminLogin() {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -20,27 +22,40 @@ export default function AdminLogin() {
       return;
     }
 
-    // Check if redirected due to unauthorized access
+    // Check if redirected due to unauthorized access or expired session
     const searchParams = new URLSearchParams(location.search);
     if (searchParams.get('unauthorized') === 'true') {
       setError('Access Restricted: You must log in as Administrator to access the admin panel.');
+    } else if (searchParams.get('sessionExpired') === 'true') {
+      setError('Session Expired: Your session has expired. Please log in again.');
     }
   }, [location, navigate]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
+    setLoading(true);
 
-    const result = loginAdmin(username, password);
+    try {
+      const result = await apiService.adminLogin({
+        username: username.trim(),
+        password: password.trim(),
+        rememberMe,
+      });
 
-    if (result.success) {
-      setSuccess('Authentication successful! Loading administrator panel...');
-      setTimeout(() => {
-        navigate('/admin');
-      }, 500);
-    } else {
-      setError(result.message);
+      if (result && result.success && result.token) {
+        setSuccess('Authentication successful! Loading administrator panel...');
+        setTimeout(() => {
+          navigate('/admin');
+        }, 400);
+      } else {
+        setError(result?.message || 'Access Denied: Invalid username or password.');
+      }
+    } catch (err) {
+      setError('Authentication failed. Unable to communicate with the verification server.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -64,7 +79,7 @@ export default function AdminLogin() {
               Admin <span className="italic text-[#1F3D2B]">Login</span>
             </h1>
             <p className="text-sm text-gray-400 mt-2">
-              Sign in to manage certificates and blockchain records.
+              Sign in with your verified administrator credentials.
             </p>
           </div>
 
@@ -97,7 +112,7 @@ export default function AdminLogin() {
                 htmlFor="username"
                 className="block text-sm font-medium text-gray-700 mb-1.5"
               >
-                Administrator Username
+                Administrator Username or Email
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
@@ -107,6 +122,7 @@ export default function AdminLogin() {
                   type="text"
                   id="username"
                   required
+                  disabled={loading}
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   placeholder="Enter username"
@@ -131,6 +147,7 @@ export default function AdminLogin() {
                   type={showPassword ? 'text' : 'password'}
                   id="password"
                   required
+                  disabled={loading}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter password"
@@ -138,6 +155,7 @@ export default function AdminLogin() {
                 />
                 <button
                   type="button"
+                  tabIndex={-1}
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                 >
@@ -150,31 +168,36 @@ export default function AdminLogin() {
               </div>
             </div>
 
-            {/* Remember Me & Forgot Password */}
+            {/* Remember Me */}
             <div className="flex items-center justify-between text-sm">
               <label className="flex items-center gap-2 text-gray-600 cursor-pointer select-none">
                 <input
                   type="checkbox"
+                  disabled={loading}
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="w-4 h-4 rounded border-gray-300 text-[#1F3D2B] focus:ring-[#1F3D2B]"
                 />
                 Remember me
               </label>
-              <button
-                type="button"
-                className="text-xs text-[#1F3D2B] font-medium hover:underline"
-              >
-                Forgot password?
-              </button>
             </div>
 
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-[#1F3D2B] text-white font-medium hover:bg-[#16281C] transition-colors shadow-sm cursor-pointer mt-2"
+              disabled={loading}
+              className="w-full inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-full bg-[#1F3D2B] text-white font-medium hover:bg-[#16281C] disabled:opacity-60 disabled:cursor-not-allowed transition-colors shadow-sm cursor-pointer mt-2"
             >
-              Login <ArrowRight className="w-4 h-4" />
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Authenticating...
+                </>
+              ) : (
+                <>
+                  Login as Administrator <ArrowRight className="w-4 h-4" />
+                </>
+              )}
             </button>
           </form>
 

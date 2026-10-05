@@ -8,15 +8,19 @@ const {
   verifyCertificate,
   verifyQRCode
 } = require("../controllers/certificateController");
+const requireAuth = require("../middleware/auth");
 
 const router = express.Router();
 
-router.get("/", getAllCertificates);
-router.post("/generate", generateCertificate);
+// Admin protected endpoints
+router.get("/", requireAuth, getAllCertificates);
+router.post("/generate", requireAuth, generateCertificate);
+router.post("/revoke", requireAuth, revokeCertificate);
+router.post("/restore", requireAuth, restoreCertificate);
+
+// Public verification endpoints
 router.post("/verify", verifyCertificate);
 router.post("/verify-qr", verifyQRCode);
-router.post("/revoke", revokeCertificate);
-router.post("/restore", restoreCertificate);
 router.get("/:certificateId", getCertificateById);
 
 module.exports = router;

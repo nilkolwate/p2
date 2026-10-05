@@ -12,6 +12,8 @@
  *   Module 8  — Contact / Support Email    /api/contact
  */
 
+require("dotenv").config();
+
 const express = require("express");
 const cors = require("cors");
 const fs = require("fs");
@@ -27,6 +29,7 @@ const contactRoutes       = require("./routes/contactRoutes");
 const notificationRoutes  = require("./routes/notificationRoutes");
 const verificationRoutes  = require("./routes/verificationRoutes");
 const authRoutes          = require("./routes/authRoutes");
+const requireAuth         = require("./middleware/auth");
 const certificateService  = require("./services/certificateService");
 
 const app = express();
@@ -80,12 +83,12 @@ app.use("/api/hash", hashRoutes);
 // Module 4 — Public Verification (by ID or PDF upload)
 app.use("/api/verify", verificationRoutes);
 
-// Module 6 — Analytics & Dashboard Stats
-app.use("/api/reports",    analyticsRoutes);
-app.use("/api/dashboard",  analyticsRoutes);
+// Module 6 — Analytics & Dashboard Stats (Admin Protected)
+app.use("/api/reports",   requireAuth, analyticsRoutes);
+app.use("/api/dashboard", requireAuth, analyticsRoutes);
 
-// Module 7 — Notifications
-app.use("/api/notifications", notificationRoutes);
+// Module 7 — Notifications (Admin Protected)
+app.use("/api/notifications", requireAuth, notificationRoutes);
 
 // Module 8 — Contact / Support Email
 app.use("/api/contact", contactRoutes);

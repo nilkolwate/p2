@@ -1,10 +1,11 @@
 const express = require("express");
 const blockchain = require("../blockchain/Blockchain");
+const requireAuth = require("../middleware/auth");
 
 const router = express.Router();
 
-// GET /api/blockchain and /api/blockchain/chain
-router.get("/", (req, res) => {
+// GET /api/blockchain and /api/blockchain/chain (Admin ledger explorer)
+router.get("/", requireAuth, (req, res) => {
   res.json({
     success: true,
     length: blockchain.chain.length,
@@ -12,7 +13,7 @@ router.get("/", (req, res) => {
   });
 });
 
-router.get("/chain", (req, res) => {
+router.get("/chain", requireAuth, (req, res) => {
   res.json({
     success: true,
     length: blockchain.chain.length,
@@ -20,8 +21,8 @@ router.get("/chain", (req, res) => {
   });
 });
 
-// GET /api/blockchain/validate
-router.get("/validate", (req, res) => {
+// GET /api/blockchain/validate (Admin chain validation)
+router.get("/validate", requireAuth, (req, res) => {
   const result = blockchain.isChainValid();
   res.json({
     success: true,
@@ -31,8 +32,8 @@ router.get("/validate", (req, res) => {
   });
 });
 
-// POST /api/blockchain/add
-router.post("/add", (req, res) => {
+// POST /api/blockchain/add (Admin action: mine & add block)
+router.post("/add", requireAuth, (req, res) => {
   try {
     const data = req.body;
     if (!data.certificateId || !data.certificateHash) {
@@ -66,7 +67,7 @@ router.post("/add", (req, res) => {
   }
 });
 
-// GET /api/blockchain/record/:certificateId
+// GET /api/blockchain/record/:certificateId (Public verification lookup)
 router.get("/record/:certificateId", (req, res) => {
   const { certificateId } = req.params;
   const block = blockchain.getBlockByCertificateId(certificateId);
