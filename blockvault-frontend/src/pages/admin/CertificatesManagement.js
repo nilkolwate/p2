@@ -39,7 +39,7 @@ const initialCertificates = [
     blockNumber: 'Block #1',
     issuer: 'Government Polytechnic Amravati',
     pdfUrl: `${apiService.BACKEND_URL}/certificates/BV-2026-2293B257.pdf`,
-    verificationUrl: `https://sayalijogi26-alt.github.io/p2/#/verify/BV-2026-2293B257`,
+    verificationUrl: `https://sayalijogi26-alt.github.io/Blockvault-1/#/verify/BV-2026-2293B257`,
   }
 ];
 
@@ -99,7 +99,7 @@ export default function CertificatesManagement() {
             ...c,
             id: certId,
             certificateId: certId,
-            verificationUrl: `https://sayalijogi26-alt.github.io/p2/#/verify/${certId}`,
+            verificationUrl: `https://sayalijogi26-alt.github.io/Blockvault-1/#/verify/${certId}`,
             pdfUrl: `${apiService.BACKEND_URL}/certificates/${certId}.pdf`,
           };
         });
@@ -472,7 +472,7 @@ export default function CertificatesManagement() {
       {/* ========================================================================= */}
       {viewModalCert && (() => {
         const certId = viewModalCert.certificateId || viewModalCert.id;
-        const verificationUrl = viewModalCert.verificationUrl || `https://sayalijogi26-alt.github.io/p2/#/verify/${certId}`;
+        const verificationUrl = viewModalCert.verificationUrl || `https://sayalijogi26-alt.github.io/Blockvault-1/#/verify/${certId}`;
         const securePdfUrl = `${apiService.BACKEND_URL}/certificates/${certId}.pdf`;
 
         return (

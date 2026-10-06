@@ -20,7 +20,7 @@ async function generateQRCodeDataURL(verificationUrl) {
 
 /**
  * Returns the canonical frontend verification URL for a certificate.
- * Uses HashRouter format: https://sayalijogi26-alt.github.io/p2/#/verify/<certificateId>
+ * Uses HashRouter format: https://sayalijogi26-alt.github.io/Blockvault-1/#/verify/<certificateId>
  */
 function getVerificationUrl(certificateId) {
   const frontendUrl = (process.env.FRONTEND_URL || "https://sayalijogi26-alt.github.io/Blockvault-1").replace(/\/+$/, "");

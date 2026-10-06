@@ -21,10 +21,10 @@ async function run() {
     const certId = content.certificateId || content.id || file.replace(".json", "");
     const pdfPath = path.join(certsFolder, `${certId}.pdf`);
 
-    const canonicalUrl = `https://sayalijogi26-alt.github.io/p2/#/verify/${certId}`;
+    const canonicalUrl = `https://sayalijogi26-alt.github.io/Blockvault-1/#/verify/${certId}`;
     console.log(`Processing ${certId} -> ${canonicalUrl}`);
 
-    // Generate fresh QR code pointing to https://sayalijogi26-alt.github.io/p2/#/verify/<certId>
+    // Generate fresh QR code pointing to https://sayalijogi26-alt.github.io/Blockvault-1/#/verify/<certId>
     const qrBuffer = await qrService.generateQRCode(canonicalUrl);
     const qrDataUrl = await qrService.generateQRCodeDataURL(canonicalUrl);
 

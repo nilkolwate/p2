@@ -103,7 +103,7 @@ app.use("/", authRoutes); // Provides /admin-login and /verify-otp
 // When QR is scanned, automatically redirect to the live frontend verification page
 app.get("/verify", (req, res) => {
   const certId = req.query.id || req.query.certificateId;
-  const frontendUrl = (process.env.FRONTEND_URL || "https://sayalijogi26-alt.github.io/p2").replace(/\/+$/, "");
+  const frontendUrl = (process.env.FRONTEND_URL || "https://sayalijogi26-alt.github.io/Blockvault-1").replace(/\/+$/, "");
   if (certId) {
     return res.redirect(302, `${frontendUrl}/#/verify/${encodeURIComponent(certId)}`);
   }
@@ -115,7 +115,7 @@ app.get("/verify/:certificateId", (req, res) => {
     const rawId = req.params.certificateId;
     const certificateId =
       certificateService.extractCertificateIdFromQR(rawId) || rawId;
-    const frontendUrl = (process.env.FRONTEND_URL || "https://sayalijogi26-alt.github.io/p2").replace(/\/+$/, "");
+    const frontendUrl = (process.env.FRONTEND_URL || "https://sayalijogi26-alt.github.io/Blockvault-1").replace(/\/+$/, "");
 
     // Allow ?format=html for explicit server-side debug view
     if (req.query.format !== "html") {

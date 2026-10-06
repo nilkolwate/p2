@@ -2,7 +2,7 @@
   "name": "blockvault-frontend",
   "version": "2.0.0",
   "private": true,
-  "homepage": "https://nilkolwate.github.io/p2",
+  "homepage": "https://sayalijogi26-alt.github.io/Blockvault-1",
   "proxy": "https://p2-c6yu.onrender.com",
   "dependencies": {
     "@testing-library/dom": "^10.4.1",
