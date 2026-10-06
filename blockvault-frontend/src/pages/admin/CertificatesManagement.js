@@ -28,18 +28,74 @@ const initialCertificates = [
     id: 'BV-2026-2293B257',
     certificateId: 'BV-2026-2293B257',
     studentName: 'Pranav Thawali',
+    rollNumber: '101',
     course: 'BCA',
     department: 'Information Technology',
     institution: 'Government Polytechnic Amravati',
     issueDate: '2026-10-01',
     status: 'Valid',
     grade: 'First Class with Distinction',
-    sha256: 'a2c9cf7bd2fcddfb65ae0d05ee081d451ad0145c26a5750d75f284ecbbd6174a',
-    hash: 'a2c9cf7bd2fcddfb65ae0d05ee081d451ad0145c26a5750d75f284ecbbd6174a',
+    sha256: 'ec61a8ddd67ad100bbd2c6ec06714e4c324cd3162ec8217c137034b2e72ee44f',
+    hash: 'ec61a8ddd67ad100bbd2c6ec06714e4c324cd3162ec8217c137034b2e72ee44f',
     blockNumber: 'Block #1',
     issuer: 'Government Polytechnic Amravati',
     pdfUrl: `${apiService.BACKEND_URL}/certificates/BV-2026-2293B257.pdf`,
     verificationUrl: `https://sayalijogi26-alt.github.io/Blockvault-1/#/verify/BV-2026-2293B257`,
+  },
+  {
+    id: 'BV-2026-2B4C9988',
+    certificateId: 'BV-2026-2B4C9988',
+    studentName: 'Sayali Jogi',
+    rollNumber: 'RN-246',
+    course: 'Diploma in Computer Engineering',
+    department: 'Computer Engineering',
+    institution: 'Government Polytechnic Amravati',
+    issueDate: '2026-10-03',
+    status: 'Valid',
+    grade: 'First Class with Distinction',
+    sha256: '0238f57ab0e72e66f82ab11fd6b912079484b6979d966c918a247e3dacdfdba6',
+    hash: '0238f57ab0e72e66f82ab11fd6b912079484b6979d966c918a247e3dacdfdba6',
+    blockNumber: 'Block #2',
+    issuer: 'Office of the Registrar',
+    pdfUrl: `${apiService.BACKEND_URL}/certificates/BV-2026-2B4C9988.pdf`,
+    verificationUrl: `https://sayalijogi26-alt.github.io/Blockvault-1/#/verify/BV-2026-2B4C9988`,
+  },
+  {
+    id: 'BV-2026-EA31F63B',
+    certificateId: 'BV-2026-EA31F63B',
+    studentName: 'Aditi Deshmukh',
+    rollNumber: 'RN-114',
+    course: 'Diploma in Information Technology',
+    department: 'Information Technology',
+    institution: 'Government Polytechnic Amravati',
+    issueDate: '2026-10-03',
+    status: 'Valid',
+    grade: 'First Class with Distinction',
+    sha256: 'd72ed5bac1a7366889bf3cc0ef1359f3c00ce3223a5738b133ee1145cf7e02cb',
+    hash: 'd72ed5bac1a7366889bf3cc0ef1359f3c00ce3223a5738b133ee1145cf7e02cb',
+    blockNumber: 'Block #3',
+    issuer: 'Office of the Registrar',
+    pdfUrl: `${apiService.BACKEND_URL}/certificates/BV-2026-EA31F63B.pdf`,
+    verificationUrl: `https://sayalijogi26-alt.github.io/Blockvault-1/#/verify/BV-2026-EA31F63B`,
+  },
+  {
+    id: 'BV-2026-E4790DA9',
+    certificateId: 'BV-2026-E4790DA9',
+    studentName: 'Audit Test Student',
+    rollNumber: 'AUD-2026',
+    course: 'Diploma in Computer Engineering',
+    department: 'Computer Engineering',
+    institution: 'Government Polytechnic Amravati',
+    issueDate: '2026-10-05',
+    status: 'Invalid',
+    revocationReason: 'Automated Audit Revocation',
+    grade: 'First Class with Distinction',
+    sha256: '3603b74dad5d4bfbfe35c3f641f0b145bbbd2f104f5762ea82e604db5cd24317',
+    hash: '3603b74dad5d4bfbfe35c3f641f0b145bbbd2f104f5762ea82e604db5cd24317',
+    blockNumber: 'Block #4',
+    issuer: 'Office of the Registrar',
+    pdfUrl: `${apiService.BACKEND_URL}/certificates/BV-2026-E4790DA9.pdf`,
+    verificationUrl: `https://sayalijogi26-alt.github.io/Blockvault-1/#/verify/BV-2026-E4790DA9`,
   }
 ];
 
@@ -664,9 +720,9 @@ export default function CertificatesManagement() {
                       </span>
                     </div>
 
-                    <div className="relative w-full h-[54vh] min-h-[420px] bg-gray-100 rounded-2xl overflow-hidden border border-gray-300 shadow-inner flex flex-col">
+                    <div className="relative w-full h-[65vh] min-h-[480px] bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-sm flex flex-col">
                       <iframe
-                        src={securePdfUrl}
+                        src={`${securePdfUrl}#toolbar=0&navpanes=0&pagemode=none&view=FitH`}
                         title={`Certificate PDF ${certId}`}
                         className="w-full flex-1 border-0"
                       />

@@ -59,39 +59,100 @@ async function run() {
     console.log(`  ✓ Updated ${certId}: hash=${hash.slice(0, 16)}...`);
   }
 
-  // Update blockchain ledger
-  if (fs.existsSync(ledgerFile)) {
-    console.log("\n=== Synchronizing Blockchain Ledger ===");
-    const ledger = JSON.parse(fs.readFileSync(ledgerFile, "utf8"));
+  // Update blockchain ledger 1-to-1 for authentic certificates
+  console.log("\n=== Synchronizing Blockchain Ledger ===");
+  const newLedger = [];
 
-    for (let i = 0; i < ledger.length; i++) {
-      const block = ledger[i];
-      if (block.data && block.data.certificateId && certHashMap[block.data.certificateId]) {
-        block.data.certificateHash = certHashMap[block.data.certificateId];
-      }
+  // Block #0: Genesis Block
+  const genesis = new Block(
+    0,
+    1704067200000,
+    {
+      type: "genesis",
+      note: "BlockVault Genesis Block — Immutable Academic Credential Ledger Initiated",
+      issuer: "Government Polytechnic Amravati"
+    },
+    "0"
+  );
+  genesis.mineBlock(2);
+  newLedger.push({
+    index: 0,
+    timestamp: genesis.timestamp,
+    data: genesis.data,
+    previousHash: "0",
+    nonce: genesis.nonce,
+    hash: genesis.hash
+  });
+  console.log(`  Block #0 (Genesis) mined: hash=${genesis.hash}`);
+
+  // Sort certificate files deterministically
+  const certOrder = [
+    "BV-2026-2293B257",
+    "BV-2026-2B4C9988",
+    "BV-2026-EA31F63B",
+    "BV-2026-E4790DA9"
+  ];
+
+  // If there are other certificates in certsFolder, append them
+  for (const file of files) {
+    const id = file.replace(".json", "");
+    if (!certOrder.includes(id)) {
+      certOrder.push(id);
     }
-
-    // Re-mine from block 1 onwards to maintain mathematical proof-of-work chain integrity
-    for (let i = 1; i < ledger.length; i++) {
-      ledger[i].previousHash = ledger[i - 1].hash;
-      const tempBlock = new Block(
-        ledger[i].index,
-        ledger[i].timestamp,
-        ledger[i].data,
-        ledger[i].previousHash
-      );
-      tempBlock.mineBlock(2);
-      ledger[i].nonce = tempBlock.nonce;
-      ledger[i].hash = tempBlock.hash;
-      console.log(`  Block #${ledger[i].index} mined: hash=${ledger[i].hash} prev=${ledger[i].previousHash}`);
-    }
-
-    fs.writeFileSync(ledgerFile, JSON.stringify(ledger, null, 2), "utf8");
-    console.log("✓ Saved updated blockchain ledger.");
   }
 
+  for (let i = 0; i < certOrder.length; i++) {
+    const certId = certOrder[i];
+    const jsonPath = path.join(certsFolder, `${certId}.json`);
+    if (!fs.existsSync(jsonPath)) continue;
+
+    const content = JSON.parse(fs.readFileSync(jsonPath, "utf8"));
+    const blockIndex = i + 1;
+    const prevHash = newLedger[newLedger.length - 1].hash;
+
+    const blockData = {
+      type: "certificate_issuance",
+      certificateId: certId,
+      studentName: content.studentName || "Student",
+      course: content.course || "Course",
+      grade: content.grade || "First Class with Distinction",
+      issueDate: content.issueDate || "2026-10-01",
+      certificateHash: certHashMap[certId] || content.hash,
+      status: content.status || "Valid"
+    };
+
+    if (content.status === "Invalid") {
+      blockData.revocationReason = content.revocationReason || "Administrative Review";
+    }
+
+    const newBlock = new Block(
+      blockIndex,
+      1704067200000 + (blockIndex * 86400000), // deterministic sequential timestamps
+      blockData,
+      prevHash
+    );
+    newBlock.mineBlock(2);
+
+    newLedger.push({
+      index: blockIndex,
+      timestamp: newBlock.timestamp,
+      data: blockData,
+      previousHash: prevHash,
+      nonce: newBlock.nonce,
+      hash: newBlock.hash
+    });
+
+    // Update blockNumber in certificate JSON
+    content.blockNumber = `Block #${blockIndex}`;
+    fs.writeFileSync(jsonPath, JSON.stringify(content, null, 2), "utf8");
+
+    console.log(`  Block #${blockIndex} (${certId}) mined: hash=${newBlock.hash} prev=${prevHash}`);
+  }
+
+  fs.writeFileSync(ledgerFile, JSON.stringify(newLedger, null, 2), "utf8");
+  console.log(`✓ Saved updated blockchain ledger with ${newLedger.length} blocks.`);
+
   // Verify blockchain validation
-  // Reload chain
   blockchain.chain = blockchain.loadChain();
   const validation = blockchain.isChainValid();
   console.log("\n=== Blockchain Integrity Verification ===");
@@ -100,7 +161,7 @@ async function run() {
     console.error("ERROR: Blockchain chain is invalid!");
     process.exit(1);
   } else {
-    console.log("SUCCESS: All certificates and blockchain cryptographic anchors valid!");
+    console.log(`SUCCESS: All ${newLedger.length} blocks and certificates valid!`);
   }
 }
 

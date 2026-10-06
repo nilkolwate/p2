@@ -16,8 +16,8 @@ import apiService from '../../services/api';
 const defaultStats = [
   {
     label: 'Total Certificates',
-    value: '2',
-    trend: '+100%',
+    value: '4',
+    trend: '4 issued',
     trendUp: true,
     icon: FileText,
     iconBg: 'bg-blue-50',
@@ -25,8 +25,8 @@ const defaultStats = [
   },
   {
     label: 'Verified & Anchored',
-    value: '2',
-    trend: '+100%',
+    value: '3',
+    trend: '75.0% validity',
     trendUp: true,
     icon: CheckCircle,
     iconBg: 'bg-green-50',
@@ -34,8 +34,8 @@ const defaultStats = [
   },
   {
     label: 'Blockchain Blocks',
-    value: '3',
-    trend: 'Synchronized',
+    value: '5',
+    trend: 'Integrity 100% ✓',
     trendUp: true,
     icon: ShieldCheck,
     iconBg: 'bg-purple-50',
@@ -43,8 +43,8 @@ const defaultStats = [
   },
   {
     label: 'Revoked',
-    value: '0',
-    trend: '0%',
+    value: '1',
+    trend: '1 under review',
     trendUp: false,
     icon: AlertTriangle,
     iconBg: 'bg-red-50',

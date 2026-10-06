@@ -13,6 +13,20 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap" rel="stylesheet">
     <title>BlockVault — Blockchain Academic Certificate Verification</title>
+    <script type="text/javascript">
+      // Ensure SPA query redirects from older QR codes convert to HashRouter hash
+      (function() {
+        var query = window.location.search;
+        if (query) {
+          var certMatch = query.match(/BV-[0-9]{4}-[A-Za-z0-9]+/i);
+          if (certMatch) {
+            window.location.replace(window.location.pathname + '#/verify/' + certMatch[0].toUpperCase());
+          } else if (query.indexOf('?/verify') !== -1) {
+            window.location.replace(window.location.pathname + '#/verify');
+          }
+        }
+      })();
+    </script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

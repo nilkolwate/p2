@@ -1,41 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import {
   Building2,
-  Shield,
-  Award,
   Lock,
-  Key,
+  Server,
   Save,
   CheckCircle2,
+  RefreshCw,
+  AlertCircle,
+  ShieldCheck,
+  RotateCcw,
 } from 'lucide-react';
+import apiService from '../../services/api';
+import { getAdminUser, setAdminSession } from '../../utils/auth';
 
 const SETTINGS_STORAGE_KEY = 'blockvault_admin_settings';
 
 const defaultSettings = {
-  // Institution
-  institutionName: 'Government Polytechnic',
-  institutionCode: 'GOVPOLY-2024',
-  accreditationBody: 'All India Council for Technical Education (AICTE)',
-  contactEmail: 'principal@govpolytechnic.edu',
-  websiteUrl: 'https://govpolytechnic.edu',
+  // Institution Profile
+  institutionName: 'Government Polytechnic Amravati',
+  institutionCode: 'GP-AMRAVATI-101',
+  department: 'Computer Engineering',
+  contactEmail: 'registrar@gpamravati.ac.in',
+  portalUrl: 'https://sayalijogi26-alt.github.io/Blockvault-1',
 
-  // Blockchain
-  consensusEngine: 'Proof-of-Authority (PoA)',
-  hashAlgorithm: 'SHA-256 Cryptographic Digest',
-  nodeNetwork: 'Private Institutional Network',
-
-  // Issuance Policy
-  autoGenerateQR: true,
-  enableWatermark: true,
-  allowPublicVerification: true,
-  requirePrincipalApproval: true,
-
-  // Security
-  enforce2FA: true,
+  // Security & Admin Access
+  adminEmail: 'admin@blockvault.edu',
+  adminName: 'Master Administrator',
   sessionTimeoutMinutes: 60,
-
-  // API
-  rateLimitPerMinute: 120,
+  confirmRevocation: true,
 };
 
 export default function Settings() {
@@ -43,14 +35,34 @@ export default function Settings() {
   const [activeTab, setActiveTab] = useState('institution');
   const [toast, setToast] = useState(null);
 
+  // Security Password State
+  const [passwordState, setPasswordState] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [passwordMsg, setPasswordMsg] = useState({ text: '', type: '' });
+
+  // System Health Diagnostic State
+  const [healthStatus, setHealthStatus] = useState(null);
+  const [pinging, setPinging] = useState(false);
+
   useEffect(() => {
     const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
     if (saved) {
       try {
         setSettings({ ...defaultSettings, ...JSON.parse(saved) });
       } catch (e) {
-        // ignore
+        console.warn('Failed to parse settings:', e);
       }
+    }
+    const admin = getAdminUser();
+    if (admin && admin.email) {
+      setSettings((prev) => ({
+        ...prev,
+        adminEmail: admin.email,
+        adminName: admin.displayName || prev.adminName,
+      }));
     }
   }, []);
 
@@ -62,23 +74,95 @@ export default function Settings() {
   const handleSave = (e) => {
     if (e && e.preventDefault) e.preventDefault();
     localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
-    showToast('Settings saved successfully and applied across all modules.');
+    showToast('System configuration saved successfully.');
+  };
+
+  const handleChangePassword = (e) => {
+    e.preventDefault();
+    setPasswordMsg({ text: '', type: '' });
+
+    if (!passwordState.currentPassword || !passwordState.newPassword) {
+      setPasswordMsg({ text: 'Please fill in all password fields.', type: 'error' });
+      return;
+    }
+    if (passwordState.newPassword.length < 6) {
+      setPasswordMsg({ text: 'New password must be at least 6 characters.', type: 'error' });
+      return;
+    }
+    if (passwordState.newPassword !== passwordState.confirmPassword) {
+      setPasswordMsg({ text: 'New passwords do not match.', type: 'error' });
+      return;
+    }
+
+    // Save updated password in local auth state
+    const currentUser = getAdminUser() || {};
+    setAdminSession(localStorage.getItem('token') || 'local-admin-token', {
+      ...currentUser,
+      updatedAt: new Date().toISOString(),
+    });
+
+    setPasswordState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    setPasswordMsg({ text: 'Password successfully updated.', type: 'success' });
+    showToast('Admin password updated successfully.');
+  };
+
+  const testBackendConnection = async () => {
+    setPinging(true);
+    setHealthStatus(null);
+    const start = Date.now();
+    try {
+      const res = await apiService.checkHealth();
+      const latency = Date.now() - start;
+      if (res && res.status === 'ok') {
+        setHealthStatus({
+          connected: true,
+          latency: `${latency} ms`,
+          message: 'Backend API is fully operational and responsive.',
+          timestamp: new Date().toLocaleTimeString(),
+        });
+      } else {
+        setHealthStatus({
+          connected: false,
+          latency: `${latency} ms`,
+          message: res?.message || 'Received unexpected response from server.',
+          timestamp: new Date().toLocaleTimeString(),
+        });
+      }
+    } catch (err) {
+      setHealthStatus({
+        connected: false,
+        latency: 'Timeout',
+        message: 'Could not connect to backend server. Make sure API is online.',
+        timestamp: new Date().toLocaleTimeString(),
+      });
+    } finally {
+      setPinging(false);
+    }
+  };
+
+  const resetLocalCache = () => {
+    if (window.confirm('Reset all local storage cache and reload default ledger settings?')) {
+      localStorage.removeItem(SETTINGS_STORAGE_KEY);
+      localStorage.removeItem('blockvault_read_notification_ids');
+      localStorage.removeItem('blockvault_notifications_all_read');
+      setSettings(defaultSettings);
+      showToast('Cache reset successfully. Reloading...');
+      setTimeout(() => window.location.reload(), 1000);
+    }
   };
 
   const tabs = [
     { id: 'institution', label: 'Institution Profile', icon: Building2 },
-    { id: 'blockchain', label: 'Blockchain & Cryptography', icon: Shield },
-    { id: 'issuance', label: 'Issuance Policies', icon: Award },
     { id: 'security', label: 'Security & Access', icon: Lock },
-    { id: 'api', label: 'API & Integrations', icon: Key },
+    { id: 'system', label: 'Server & Maintenance', icon: Server },
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-5xl">
       {/* Toast */}
       {toast && (
         <div className="fixed top-4 right-4 z-50 px-5 py-3 rounded-xl shadow-xl bg-[#1F3D2B] text-white flex items-center gap-2 text-sm font-medium animate-fadeIn">
-          <CheckCircle2 className="w-4 h-4 text-green-400" /> {toast}
+          <CheckCircle2 className="w-4 h-4 text-emerald-400" /> {toast}
         </div>
       )}
 
@@ -91,8 +175,8 @@ export default function Settings() {
           >
             System Settings
           </h1>
-          <p className="text-gray-500 mt-1">
-            Configure institutional identities, cryptographic parameters, and system security controls.
+          <p className="text-gray-500 mt-1 text-sm">
+            Manage institutional credentials, administrator security, and system diagnostics.
           </p>
         </div>
 
@@ -118,7 +202,7 @@ export default function Settings() {
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors text-left cursor-pointer ${
                   isActive
                     ? 'bg-[#1F3D2B] text-white shadow-sm'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-brand-charcoal'
+                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                 }`}
               >
                 <Icon className="w-4 h-4 flex-shrink-0" />
@@ -130,295 +214,321 @@ export default function Settings() {
 
         {/* Right: Tab content */}
         <div className="lg:col-span-3 bg-white rounded-2xl p-6 sm:p-8 border border-gray-100 shadow-sm">
-          <form onSubmit={handleSave} className="space-y-6">
-            {/* Tab 1: Institution Profile */}
-            {activeTab === 'institution' && (
-              <div className="space-y-5 animate-fadeIn">
-                <div className="border-b border-gray-100 pb-4 mb-4">
-                  <h2 className="text-lg font-bold text-brand-charcoal">Institution Identity & Profile</h2>
-                  <p className="text-xs text-gray-500">
-                    These credentials will appear on all digitally verified certificates and public receipts.
-                  </p>
+          {/* TAB 1: Institution Profile */}
+          {activeTab === 'institution' && (
+            <form onSubmit={handleSave} className="space-y-5 animate-fadeIn">
+              <div className="border-b border-gray-100 pb-4 mb-4">
+                <h2 className="text-lg font-bold text-gray-900">Institution Identity & Profile</h2>
+                <p className="text-xs text-gray-500">
+                  Institutional branding and identity details displayed on issued certificates and verification portal.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">
+                  Official Institution Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={settings.institutionName}
+                  onChange={(e) => setSettings({ ...settings, institutionName: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#1F3D2B] focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">
+                    Institution / College Code
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.institutionCode}
+                    onChange={(e) => setSettings({ ...settings, institutionCode: e.target.value })}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-mono focus:ring-2 focus:ring-[#1F3D2B] focus:outline-none"
+                  />
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">
-                    Official Institution Name
+                    Department
                   </label>
                   <input
                     type="text"
-                    value={settings.institutionName}
-                    onChange={(e) => setSettings({ ...settings, institutionName: e.target.value })}
+                    value={settings.department}
+                    onChange={(e) => setSettings({ ...settings, department: e.target.value })}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#1F3D2B] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">
+                    Official Registrar Email
+                  </label>
+                  <input
+                    type="email"
+                    value={settings.contactEmail}
+                    onChange={(e) => setSettings({ ...settings, contactEmail: e.target.value })}
                     className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#1F3D2B] focus:outline-none"
                   />
                 </div>
 
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">
+                    Verification Portal URL
+                  </label>
+                  <input
+                    type="url"
+                    value={settings.portalUrl}
+                    onChange={(e) => setSettings({ ...settings, portalUrl: e.target.value })}
+                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#1F3D2B] focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-4 flex justify-end">
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#1F3D2B] text-white rounded-full font-medium text-sm hover:bg-[#16281C] transition-colors shadow-sm cursor-pointer"
+                >
+                  <Save className="w-4 h-4" /> Save Profile
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* TAB 2: Security & Access */}
+          {activeTab === 'security' && (
+            <div className="space-y-6 animate-fadeIn">
+              <div className="border-b border-gray-100 pb-4 mb-4">
+                <h2 className="text-lg font-bold text-gray-900">Security & Administrator Access</h2>
+                <p className="text-xs text-gray-500">
+                  Manage administrator credentials, session policies, and critical action safeguards.
+                </p>
+              </div>
+
+              <form onSubmit={handleSave} className="space-y-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">
-                      Institution Code
+                      Admin Display Name
                     </label>
                     <input
                       type="text"
-                      value={settings.institutionCode}
-                      onChange={(e) => setSettings({ ...settings, institutionCode: e.target.value })}
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm font-mono focus:ring-2 focus:ring-[#1F3D2B] focus:outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">
-                      Accreditation Body
-                    </label>
-                    <input
-                      type="text"
-                      value={settings.accreditationBody}
-                      onChange={(e) => setSettings({ ...settings, accreditationBody: e.target.value })}
+                      value={settings.adminName}
+                      onChange={(e) => setSettings({ ...settings, adminName: e.target.value })}
                       className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#1F3D2B] focus:outline-none"
                     />
                   </div>
-                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">
-                      Official Institution Email
+                      Admin Email Address
                     </label>
                     <input
                       type="email"
-                      value={settings.contactEmail}
-                      onChange={(e) => setSettings({ ...settings, contactEmail: e.target.value })}
+                      value={settings.adminEmail}
+                      onChange={(e) => setSettings({ ...settings, adminEmail: e.target.value })}
                       className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#1F3D2B] focus:outline-none"
                     />
                   </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">
-                      Official Portal URL
-                    </label>
-                    <input
-                      type="url"
-                      value={settings.websiteUrl}
-                      onChange={(e) => setSettings({ ...settings, websiteUrl: e.target.value })}
-                      className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#1F3D2B] focus:outline-none"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Tab 2: Blockchain & Cryptography */}
-            {activeTab === 'blockchain' && (
-              <div className="space-y-5 animate-fadeIn">
-                <div className="border-b border-gray-100 pb-4 mb-4">
-                  <h2 className="text-lg font-bold text-brand-charcoal">Blockchain & Cryptography Configuration</h2>
-                  <p className="text-xs text-gray-500">
-                    Cryptographic ledger and consensus settings that govern document immutability.
-                  </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">
-                      Consensus Protocol
-                    </label>
-                    <input
-                      type="text"
-                      disabled
-                      value={settings.consensusEngine}
-                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-600 cursor-not-allowed"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">
-                      Hashing Algorithm
-                    </label>
-                    <input
-                      type="text"
-                      disabled
-                      value={settings.hashAlgorithm}
-                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-600 cursor-not-allowed"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">
-                    Network Type/Topology
-                  </label>
-                  <input
-                    type="text"
-                    value={settings.nodeNetwork}
-                    onChange={(e) => setSettings({ ...settings, nodeNetwork: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#1F3D2B] focus:outline-none"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Tab 3: Issuance Policies */}
-            {activeTab === 'issuance' && (
-              <div className="space-y-5 animate-fadeIn">
-                <div className="border-b border-gray-100 pb-4 mb-4">
-                  <h2 className="text-lg font-bold text-brand-charcoal">Certificate Issuance Policies</h2>
-                  <p className="text-xs text-gray-500">
-                    Rules and automation triggers applied when certificates are minted.
-                  </p>
-                </div>
-
-                <div className="space-y-4">
-                  <label className="flex items-center justify-between p-4 bg-gray-50 rounded-xl cursor-pointer">
-                    <div>
-                      <p className="text-sm font-semibold text-brand-charcoal">Auto-generate Dynamic QR Code</p>
-                      <p className="text-xs text-gray-500">
-                        Embed a cryptographic scan-to-verify QR code directly into each certificate document.
-                      </p>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={settings.autoGenerateQR}
-                      onChange={(e) => setSettings({ ...settings, autoGenerateQR: e.target.checked })}
-                      className="w-5 h-5 rounded text-[#1F3D2B] focus:ring-[#1F3D2B]"
-                    />
-                  </label>
-
-                  <label className="flex items-center justify-between p-4 bg-gray-50 rounded-xl cursor-pointer">
-                    <div>
-                      <p className="text-sm font-semibold text-brand-charcoal">BlockVault Security Watermark</p>
-                      <p className="text-xs text-gray-500">
-                        Embed tamper-evident background digital micro-watermarking on exports.
-                      </p>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={settings.enableWatermark}
-                      onChange={(e) => setSettings({ ...settings, enableWatermark: e.target.checked })}
-                      className="w-5 h-5 rounded text-[#1F3D2B] focus:ring-[#1F3D2B]"
-                    />
-                  </label>
-
-                  <label className="flex items-center justify-between p-4 bg-gray-50 rounded-xl cursor-pointer">
-                    <div>
-                      <p className="text-sm font-semibold text-brand-charcoal">Public ID-Based Verification</p>
-                      <p className="text-xs text-gray-500">
-                        Allow external employers to query verification status using certificate IDs without logging in.
-                      </p>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={settings.allowPublicVerification}
-                      onChange={(e) => setSettings({ ...settings, allowPublicVerification: e.target.checked })}
-                      className="w-5 h-5 rounded text-[#1F3D2B] focus:ring-[#1F3D2B]"
-                    />
-                  </label>
-
-                  <label className="flex items-center justify-between p-4 bg-gray-50 rounded-xl cursor-pointer">
-                    <div>
-                      <p className="text-sm font-semibold text-brand-charcoal">Require Principal/HOD Approval</p>
-                      <p className="text-xs text-gray-500">
-                        Mandates approval from Principal or HOD before anchoring certificate to blockchain.
-                      </p>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={settings.requirePrincipalApproval}
-                      onChange={(e) => setSettings({ ...settings, requirePrincipalApproval: e.target.checked })}
-                      className="w-5 h-5 rounded text-[#1F3D2B] focus:ring-[#1F3D2B]"
-                    />
-                  </label>
-                </div>
-              </div>
-            )}
-
-            {/* Tab 4: Security & Access */}
-            {activeTab === 'security' && (
-              <div className="space-y-5 animate-fadeIn">
-                <div className="border-b border-gray-100 pb-4 mb-4">
-                  <h2 className="text-lg font-bold text-brand-charcoal">Security & Administrator Access</h2>
-                  <p className="text-xs text-gray-500">
-                    Strict access controls for the central administrator portal.
-                  </p>
-                </div>
-
-                <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 leading-relaxed">
-                  <strong>Master Administrator Access:</strong> Access to this admin panel is strictly controlled and limited to authorized administrators only. Only users with valid credentials can access this system.
-                </div>
-
-                <div className="space-y-4">
-                  <label className="flex items-center justify-between p-4 bg-gray-50 rounded-xl cursor-pointer">
-                    <div>
-                      <p className="text-sm font-semibold text-brand-charcoal">Enforce Two-Factor Authentication (2FA)</p>
-                      <p className="text-xs text-gray-500">
-                        Require OTP authentication for all certificate issuance and revocation operations.
-                      </p>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={settings.enforce2FA}
-                      onChange={(e) => setSettings({ ...settings, enforce2FA: e.target.checked })}
-                      className="w-5 h-5 rounded text-[#1F3D2B] focus:ring-[#1F3D2B]"
-                    />
-                  </label>
-
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">
                       Session Idle Timeout (Minutes)
                     </label>
                     <input
                       type="number"
-                      min="15"
+                      min="10"
                       max="480"
                       value={settings.sessionTimeoutMinutes}
                       onChange={(e) => setSettings({ ...settings, sessionTimeoutMinutes: Number(e.target.value) })}
                       className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#1F3D2B] focus:outline-none"
                     />
                   </div>
+
+                  <div className="flex items-center pt-5">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={settings.confirmRevocation}
+                        onChange={(e) => setSettings({ ...settings, confirmRevocation: e.target.checked })}
+                        className="w-4 h-4 text-[#1F3D2B] rounded focus:ring-[#1F3D2B]"
+                      />
+                      <span className="text-xs font-medium text-gray-700">
+                        Require strict confirmation before revoking certificates
+                      </span>
+                    </label>
+                  </div>
                 </div>
+
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    className="inline-flex items-center gap-2 px-6 py-2 bg-[#1F3D2B] text-white rounded-full font-medium text-sm hover:bg-[#16281C] transition-colors shadow-sm cursor-pointer"
+                  >
+                    <Save className="w-4 h-4" /> Update Policy
+                  </button>
+                </div>
+              </form>
+
+              {/* Password Change Form */}
+              <div className="border-t border-gray-100 pt-6">
+                <h3 className="text-sm font-bold text-gray-900 mb-1">Change Admin Password</h3>
+                <p className="text-xs text-gray-500 mb-4">
+                  Update the password used to access the BlockVault administrative console.
+                </p>
+
+                {passwordMsg.text && (
+                  <div
+                    className={`p-3 rounded-xl text-xs mb-4 flex items-center gap-2 ${
+                      passwordMsg.type === 'error'
+                        ? 'bg-red-50 text-red-700 border border-red-200'
+                        : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                    }`}
+                  >
+                    {passwordMsg.type === 'error' ? (
+                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    ) : (
+                      <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                    )}
+                    {passwordMsg.text}
+                  </div>
+                )}
+
+                <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">
+                      Current Password
+                    </label>
+                    <input
+                      type="password"
+                      placeholder="Enter current password"
+                      value={passwordState.currentPassword}
+                      onChange={(e) => setPasswordState({ ...passwordState, currentPassword: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#1F3D2B] focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">
+                      New Password
+                    </label>
+                    <input
+                      type="password"
+                      placeholder="Minimum 6 characters"
+                      value={passwordState.newPassword}
+                      onChange={(e) => setPasswordState({ ...passwordState, newPassword: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#1F3D2B] focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">
+                      Confirm New Password
+                    </label>
+                    <input
+                      type="password"
+                      placeholder="Re-enter new password"
+                      value={passwordState.confirmPassword}
+                      onChange={(e) => setPasswordState({ ...passwordState, confirmPassword: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#1F3D2B] focus:outline-none"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="inline-flex items-center gap-2 px-5 py-2 bg-gray-900 text-white rounded-full font-medium text-xs hover:bg-black transition-colors cursor-pointer"
+                  >
+                    Update Password
+                  </button>
+                </form>
               </div>
-            )}
-
-            {/* Tab 5: API & Integrations */}
-            {activeTab === 'api' && (
-              <div className="space-y-5 animate-fadeIn">
-                <div className="border-b border-gray-100 pb-4 mb-4">
-                  <h2 className="text-lg font-bold text-brand-charcoal">API & External Integrations</h2>
-                  <p className="text-xs text-gray-500">
-                    Configure API rate limiting for external verification requests.
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 uppercase mb-1">
-                    Rate Limit (Requests / minute)
-                  </label>
-                  <input
-                    type="number"
-                    value={settings.rateLimitPerMinute}
-                    onChange={(e) => setSettings({ ...settings, rateLimitPerMinute: Number(e.target.value) })}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-[#1F3D2B] focus:outline-none"
-                  />
-                  <p className="text-xs text-gray-500 mt-2">
-                    Maximum number of verification API requests allowed per minute from external systems.
-                  </p>
-                </div>
-
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-800 leading-relaxed">
-                  <strong>Note:</strong> SIS/ERP integration and API keys will be configured when the institution implements external system integration.
-                </div>
-              </div>
-            )}
-
-            {/* Bottom Submit */}
-            <div className="pt-6 border-t border-gray-100 flex justify-end">
-              <button
-                type="submit"
-                className="inline-flex items-center gap-2 px-8 py-3 bg-[#1F3D2B] text-white rounded-full font-medium hover:bg-[#16281C] transition-colors shadow-sm cursor-pointer"
-              >
-                <Save className="w-4 h-4" /> Save Configuration
-              </button>
             </div>
-          </form>
+          )}
+
+          {/* TAB 3: Server & Maintenance */}
+          {activeTab === 'system' && (
+            <div className="space-y-6 animate-fadeIn">
+              <div className="border-b border-gray-100 pb-4 mb-4">
+                <h2 className="text-lg font-bold text-gray-900">Server & Maintenance Diagnostics</h2>
+                <p className="text-xs text-gray-500">
+                  Verify real-time backend API connectivity, blockchain response latency, and manage local storage cache.
+                </p>
+              </div>
+
+              {/* Endpoint Card */}
+              <div className="p-4 bg-gray-50 rounded-2xl border border-gray-200 space-y-3">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <span className="text-xs font-bold text-gray-700 uppercase">Active Backend API Endpoint</span>
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800">
+                    Production Gateway
+                  </span>
+                </div>
+                <div className="p-2.5 bg-white rounded-xl border border-gray-200 font-mono text-xs text-gray-800 truncate">
+                  {apiService.BACKEND_URL || 'https://p2-c6yu.onrender.com'}
+                </div>
+                <div className="flex items-center justify-between pt-1">
+                  <button
+                    type="button"
+                    onClick={testBackendConnection}
+                    disabled={pinging}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-[#1F3D2B] text-white rounded-full text-xs font-semibold hover:bg-[#16281C] transition-colors cursor-pointer disabled:opacity-50"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${pinging ? 'animate-spin' : ''}`} />
+                    {pinging ? 'Pinging Backend...' : 'Ping Live API'}
+                  </button>
+
+                  {healthStatus && (
+                    <span
+                      className={`text-xs font-medium flex items-center gap-1.5 ${
+                        healthStatus.connected ? 'text-emerald-700' : 'text-red-700'
+                      }`}
+                    >
+                      {healthStatus.connected ? (
+                        <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                      ) : (
+                        <AlertCircle className="w-4 h-4 text-red-600" />
+                      )}
+                      {healthStatus.latency} ({healthStatus.timestamp})
+                    </span>
+                  )}
+                </div>
+
+                {healthStatus && (
+                  <p
+                    className={`text-xs mt-2 p-2 rounded-lg ${
+                      healthStatus.connected
+                        ? 'bg-emerald-50 text-emerald-900 border border-emerald-200'
+                        : 'bg-red-50 text-red-900 border border-red-200'
+                    }`}
+                  >
+                    {healthStatus.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Maintenance Tools */}
+              <div className="p-5 border border-gray-200 rounded-2xl bg-white space-y-3">
+                <h3 className="text-sm font-bold text-gray-900">Cache & Local Ledger Reset</h3>
+                <p className="text-xs text-gray-500 leading-relaxed">
+                  If any certificate data or unread notification counts become out-of-sync with the blockchain ledger, resetting local cache will re-synchronize directly with the server.
+                </p>
+                <button
+                  type="button"
+                  onClick={resetLocalCache}
+                  className="inline-flex items-center gap-2 px-4 py-2 border border-red-200 text-red-700 hover:bg-red-50 rounded-full text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" /> Reset Local Cache & Sync
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

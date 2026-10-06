@@ -13,83 +13,18 @@ import {
   SlidersHorizontal,
 } from 'lucide-react';
 
-const initialNotifications = [
-  {
-    id: 'NOTIF-001',
-    title: 'Certificate #BV-2024-007 Anchored to Block #1035',
-    description: 'Degree certificate for Sayali Jogi (B.Tech CS) successfully verified and added to the blockchain ledger.',
-    category: 'Certificates',
-    priority: 'Normal',
-    type: 'success',
-    timestamp: '5 minutes ago',
-    unread: true,
-    actionUrl: '/admin/certificates',
-    actionText: 'View Certificate',
-  },
-  {
-    id: 'NOTIF-002',
-    title: 'SHA-256 Hash Discrepancy Flagged',
-    description: 'A third-party verification attempt for Certificate #BV-2024-005 failed due to modified PDF header payload.',
-    category: 'Security',
-    priority: 'High',
-    type: 'warning',
-    timestamp: '25 minutes ago',
-    unread: true,
-    actionUrl: '/admin/blockchain',
-    actionText: 'Inspect Block',
-  },
-  {
-    id: 'NOTIF-003',
-    title: 'Master Administrator Session Established',
-    description: 'Administrator logged into the central admin portal from Chrome on Windows.',
-    category: 'System',
-    priority: 'Normal',
-    type: 'info',
-    timestamp: '1 hour ago',
-    unread: true,
-    actionUrl: '/admin/settings',
-    actionText: 'Review Security',
-  },
-  {
-    id: 'NOTIF-004',
-    title: 'New Issuer Account Pending Approval',
-    description: 'Office of Academic Affairs requested issuance credential keys for registrar Dr. Ramesh Patel.',
-    category: 'Users',
-    priority: 'Normal',
-    type: 'info',
-    timestamp: '3 hours ago',
-    unread: false,
-    actionUrl: '/admin/users',
-    actionText: 'Manage Users',
-  },
-  {
-    id: 'NOTIF-005',
-    title: 'Daily Blockchain State Snapshot Completed',
-    description: 'Automated cryptographic health check: 6 blocks validated with 100% integrity score.',
-    category: 'Security',
-    priority: 'Low',
-    type: 'success',
-    timestamp: '6 hours ago',
-    unread: false,
-    actionUrl: '/admin/blockchain',
-    actionText: 'View Ledger',
-  },
-  {
-    id: 'NOTIF-006',
-    title: 'Certificate #BV-2024-005 Revoked by Registrar',
-    description: 'Reason recorded: Grade recalculation discrepancy. Block #5 revocation receipt emitted.',
-    category: 'Certificates',
-    priority: 'High',
-    type: 'warning',
-    timestamp: '1 day ago',
-    unread: false,
-    actionUrl: '/admin/certificates',
-    actionText: 'Inspect Status',
-  },
-];
+import {
+  getStoredNotifications,
+  markAllNotificationsRead,
+  markSingleNotificationRead,
+  deleteStoredNotification,
+  clearAllStoredNotifications,
+  subscribeNotifications,
+  saveStoredNotifications,
+} from '../../utils/notificationStore';
 
 export default function Notifications() {
-  const [notifications, setNotifications] = useState(initialNotifications);
+  const [notifications, setNotifications] = useState(getStoredNotifications);
   const [activeTab, setActiveTab] = useState('All');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [toast, setToast] = useState(null);
@@ -104,6 +39,11 @@ export default function Notifications() {
   });
 
   useEffect(() => {
+    setNotifications(getStoredNotifications());
+    const unsub = subscribeNotifications((updated) => {
+      setNotifications(updated);
+    });
+
     apiService
       .getNotifications()
       .then((res) => {
@@ -120,10 +60,12 @@ export default function Notifications() {
             actionUrl: n.actionUrl || '/admin/certificates',
             actionText: n.actionText || 'View Details',
           }));
-          setNotifications(liveNotifs);
+          saveStoredNotifications(liveNotifs);
         }
       })
       .catch((err) => console.warn('Notifications fetch error:', err));
+
+    return unsub;
   }, []);
 
   const showToast = (message) => {
@@ -132,24 +74,22 @@ export default function Notifications() {
   };
 
   const markAllRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
+    markAllNotificationsRead();
     showToast('All notifications marked as read.');
   };
 
   const markSingleRead = (id) => {
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === id ? { ...n, unread: false } : n))
-    );
+    markSingleNotificationRead(id);
   };
 
   const deleteNotification = (id) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    deleteStoredNotification(id);
     showToast('Notification deleted.');
   };
 
   const clearAll = () => {
     if (window.confirm('Are you sure you want to clear all notifications?')) {
-      setNotifications([]);
+      clearAllStoredNotifications();
       showToast('All notifications cleared.');
     }
   };

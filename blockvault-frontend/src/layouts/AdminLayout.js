@@ -19,6 +19,12 @@ import {
   FileCheck,
 } from 'lucide-react';
 import { isAdminAuthenticated, logoutAdmin, getAdminUser } from '../utils/auth';
+import {
+  getStoredNotifications,
+  markAllNotificationsRead,
+  markSingleNotificationRead,
+  subscribeNotifications,
+} from '../utils/notificationStore';
 
 const sidebarLinks = [
   { to: '/admin', icon: LayoutDashboard, label: 'Dashboard' },
@@ -30,48 +36,23 @@ const sidebarLinks = [
   { to: '/admin/settings', icon: Settings, label: 'Settings' },
 ];
 
-const initialNotifications = [
-  {
-    id: 1,
-    title: 'Certificate #BV-2024-007 Anchored',
-    desc: 'New B.Tech certificate added to Blockchain Block #1035',
-    time: '5 min ago',
-    unread: true,
-    type: 'success',
-  },
-  {
-    id: 2,
-    title: 'SHA-256 Hash Verification Alert',
-    desc: 'Certificate #BV-2024-001 verified genuinely',
-    time: '20 min ago',
-    unread: true,
-    type: 'info',
-  },
-  {
-    id: 3,
-    title: 'System Access Notice',
-    desc: 'Administrator logged in from Chrome browser',
-    time: '1 hour ago',
-    unread: true,
-    type: 'warning',
-  },
-  {
-    id: 4,
-    title: 'New Issuer Account Pending',
-    desc: 'Registrar office requested issuing privileges',
-    time: '3 hours ago',
-    unread: false,
-    type: 'info',
-  },
-];
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
-  const [notifications, setNotifications] = useState(initialNotifications);
+  const [notifications, setNotifications] = useState(getStoredNotifications);
   const notifRef = useRef(null);
   const navigate = useNavigate();
   const adminUser = getAdminUser();
+
+  // Synchronize notification state across tabs and pages
+  useEffect(() => {
+    setNotifications(getStoredNotifications());
+    const unsubscribe = subscribeNotifications((updated) => {
+      setNotifications(updated);
+    });
+    return unsubscribe;
+  }, []);
 
   // Authentication guard: prevent unauthorized users from viewing admin panel
   useEffect(() => {
@@ -97,7 +78,18 @@ const AdminLayout = () => {
   };
 
   const markAllAsRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
+    const updated = markAllNotificationsRead();
+    setNotifications(updated);
+  };
+
+  const handleNotificationClick = (notif) => {
+    if (notif.unread) {
+      markSingleNotificationRead(notif.id);
+    }
+    setNotificationsOpen(false);
+    if (notif.actionUrl) {
+      navigate(notif.actionUrl);
+    }
   };
 
   const unreadCount = notifications.filter((n) => n.unread).length;
@@ -247,13 +239,7 @@ const AdminLayout = () => {
                       {notifications.map((n) => (
                         <div
                           key={n.id}
-                          onClick={() => {
-                            setNotifications((prev) =>
-                              prev.map((item) => (item.id === n.id ? { ...item, unread: false } : item))
-                            );
-                            setNotificationsOpen(false);
-                            navigate('/admin/notifications');
-                          }}
+                          onClick={() => handleNotificationClick(n)}
                           className={`px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer flex items-start gap-3 ${
                             n.unread ? 'bg-green-50/40' : ''
                           }`}

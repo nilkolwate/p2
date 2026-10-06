@@ -46,8 +46,10 @@ export default function VerificationResult() {
     );
   }
 
+  const blockData = activeResult?.certificateRecord || activeResult?.data;
+
   // Handle missing or invalid certificate data
-  if (!activeResult && !certIdToUse) {
+  if ((!activeResult && !certIdToUse) || (activeResult && activeResult.success === false && !blockData)) {
     return (
       <div className="bg-[#F5F1E9] min-h-[calc(100vh-80px)] py-16 flex items-center justify-center">
         <div className="w-full max-w-2xl mx-auto px-6">
@@ -75,8 +77,6 @@ export default function VerificationResult() {
       </div>
     );
   }
-
-  const blockData = activeResult?.certificateRecord || activeResult?.data;
 
   const isVerified =
     activeResult?.verified !== undefined

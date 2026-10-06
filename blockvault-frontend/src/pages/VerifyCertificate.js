@@ -101,6 +101,12 @@ export default function VerifyCertificate() {
       trimmed = decodeURIComponent(trimmed);
     } catch (_) {}
 
+    // Highest priority: standard BlockVault Certificate ID pattern BV-YYYY-XXXXXXXX
+    const bvMatch = trimmed.match(/BV-[0-9]{4}-[A-Za-z0-9]+/i);
+    if (bvMatch) {
+      return bvMatch[0].toUpperCase();
+    }
+
     // 1. Matches: /#/verify/ID or #/verify/ID
     const hashMatch = trimmed.match(/#\/verify\/([A-Za-z0-9_-]+)/i);
     if (hashMatch && hashMatch[1] && hashMatch[1].toLowerCase() !== 'result') {
