@@ -110,7 +110,7 @@ function extractCertificateIdFromQR(qrData) {
 async function generateCertificate(data, hostHeader = null) {
   const collegeName = data.institution || "Government Polytechnic Amravati";
   const certificateId = data.certificateId || generateCertificateId();
-  // For QR code: encode canonical frontend URL (HashRouter https://nilkolwate.github.io/p2/#/verify/<certificateId>)
+  // For QR code: encode canonical frontend URL (HashRouter https://sayalijogi26-alt.github.io/p2/#/verify/<certificateId>)
   const verificationUrl = getVerificationUrl(certificateId);
 
   // Generate QR buffer for PDFKit and DataURL for frontend preview

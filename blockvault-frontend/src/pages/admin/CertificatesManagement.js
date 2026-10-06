@@ -39,7 +39,7 @@ const initialCertificates = [
     blockNumber: 'Block #1',
     issuer: 'Government Polytechnic Amravati',
     pdfUrl: `${apiService.BACKEND_URL}/certificates/BV-2026-2293B257.pdf`,
-    verificationUrl: `https://nilkolwate.github.io/p2/#/verify/BV-2026-2293B257`,
+    verificationUrl: `https://sayalijogi26-alt.github.io/p2/#/verify/BV-2026-2293B257`,
   }
 ];
 
@@ -99,7 +99,7 @@ export default function CertificatesManagement() {
             ...c,
             id: certId,
             certificateId: certId,
-            verificationUrl: `https://nilkolwate.github.io/p2/#/verify/${certId}`,
+            verificationUrl: `https://sayalijogi26-alt.github.io/p2/#/verify/${certId}`,
             pdfUrl: `${apiService.BACKEND_URL}/certificates/${certId}.pdf`,
           };
         });
@@ -243,9 +243,8 @@ export default function CertificatesManagement() {
       {/* Toast Alert */}
       {toast && (
         <div
-          className={`fixed top-4 right-4 z-50 px-5 py-3 rounded-xl shadow-xl flex items-center gap-2 text-sm font-medium animate-fadeIn ${
-            toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-[#1F3D2B] text-white'
-          }`}
+          className={`fixed top-4 right-4 z-50 px-5 py-3 rounded-xl shadow-xl flex items-center gap-2 text-sm font-medium animate-fadeIn ${toast.type === 'error' ? 'bg-red-600 text-white' : 'bg-[#1F3D2B] text-white'
+            }`}
         >
           {toast.type === 'error' ? <XCircle className="w-4 h-4" /> : <Check className="w-4 h-4" />}
           {toast.message}
@@ -368,9 +367,8 @@ export default function CertificatesManagement() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${
-                          statusConfig[cert.status] || 'bg-gray-100 text-gray-800'
-                        }`}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${statusConfig[cert.status] || 'bg-gray-100 text-gray-800'
+                          }`}
                       >
                         {cert.status === 'Valid' ? (
                           <CheckCircle className="w-3 h-3" />
@@ -405,11 +403,10 @@ export default function CertificatesManagement() {
                         {/* Revoke / Restore Action Button */}
                         <button
                           onClick={() => openRevokeModal(cert)}
-                          className={`p-2 rounded-lg transition-colors cursor-pointer ${
-                            cert.status === 'Invalid'
+                          className={`p-2 rounded-lg transition-colors cursor-pointer ${cert.status === 'Invalid'
                               ? 'text-green-600 hover:bg-green-50'
                               : 'text-gray-500 hover:text-red-600 hover:bg-red-50'
-                          }`}
+                            }`}
                           title={cert.status === 'Invalid' ? 'Restore Certificate' : 'Revoke Certificate'}
                         >
                           {cert.status === 'Invalid' ? (
@@ -447,11 +444,10 @@ export default function CertificatesManagement() {
               <button
                 key={pageNum}
                 onClick={() => setCurrentPage(pageNum)}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium cursor-pointer transition-colors ${
-                  currentPage === pageNum
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium cursor-pointer transition-colors ${currentPage === pageNum
                     ? 'bg-[#1F3D2B] text-white'
                     : 'border border-gray-200 text-gray-600 hover:bg-gray-50'
-                }`}
+                  }`}
               >
                 {pageNum}
               </button>
@@ -476,7 +472,7 @@ export default function CertificatesManagement() {
       {/* ========================================================================= */}
       {viewModalCert && (() => {
         const certId = viewModalCert.certificateId || viewModalCert.id;
-        const verificationUrl = viewModalCert.verificationUrl || `https://nilkolwate.github.io/p2/#/verify/${certId}`;
+        const verificationUrl = viewModalCert.verificationUrl || `https://sayalijogi26-alt.github.io/p2/#/verify/${certId}`;
         const securePdfUrl = `${apiService.BACKEND_URL}/certificates/${certId}.pdf`;
 
         return (
@@ -503,22 +499,20 @@ export default function CertificatesManagement() {
                   <div className="inline-flex rounded-xl bg-gray-100 p-1 border border-gray-200 text-xs font-semibold">
                     <button
                       onClick={() => setPreviewMode('certificate')}
-                      className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                        previewMode === 'certificate'
+                      className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${previewMode === 'certificate'
                           ? 'bg-[#1F3D2B] text-white shadow-sm'
                           : 'text-gray-600 hover:text-gray-900'
-                      }`}
+                        }`}
                     >
                       <Award className="w-3.5 h-3.5" />
                       Certificate View
                     </button>
                     <button
                       onClick={() => setPreviewMode('pdf')}
-                      className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                        previewMode === 'pdf'
+                      className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${previewMode === 'pdf'
                           ? 'bg-[#1F3D2B] text-white shadow-sm'
                           : 'text-gray-600 hover:text-gray-900'
-                      }`}
+                        }`}
                     >
                       <FileText className="w-3.5 h-3.5" />
                       PDF Document
@@ -685,9 +679,8 @@ export default function CertificatesManagement() {
                   <div>
                     <span className="text-gray-500 block font-semibold mb-0.5">Status:</span>
                     <span
-                      className={`inline-block px-2.5 py-0.5 rounded-full font-bold text-[11px] border ${
-                        statusConfig[viewModalCert.status] || 'bg-gray-100'
-                      }`}
+                      className={`inline-block px-2.5 py-0.5 rounded-full font-bold text-[11px] border ${statusConfig[viewModalCert.status] || 'bg-gray-100'
+                        }`}
                     >
                       {viewModalCert.status}
                     </span>
@@ -763,9 +756,8 @@ export default function CertificatesManagement() {
             <div className="flex items-center justify-between pb-3 border-b border-gray-100">
               <div className="flex items-center gap-2">
                 <AlertTriangle
-                  className={`w-5 h-5 ${
-                    revokeModalCert.status === 'Invalid' ? 'text-green-600' : 'text-red-600'
-                  }`}
+                  className={`w-5 h-5 ${revokeModalCert.status === 'Invalid' ? 'text-green-600' : 'text-red-600'
+                    }`}
                 />
                 <h3 className="font-bold text-lg text-gray-900">
                   {revokeModalCert.status === 'Invalid' ? 'Restore Certificate' : 'Revoke Certificate'}
@@ -823,11 +815,10 @@ export default function CertificatesManagement() {
               </button>
               <button
                 onClick={confirmStatusChange}
-                className={`flex-1 py-2.5 text-white rounded-xl text-sm font-medium transition-colors cursor-pointer ${
-                  revokeModalCert.status === 'Invalid'
+                className={`flex-1 py-2.5 text-white rounded-xl text-sm font-medium transition-colors cursor-pointer ${revokeModalCert.status === 'Invalid'
                     ? 'bg-green-700 hover:bg-green-800'
                     : 'bg-red-600 hover:bg-red-700'
-                }`}
+                  }`}
               >
                 {revokeModalCert.status === 'Invalid' ? 'Confirm Restore' : 'Confirm Revocation'}
               </button>

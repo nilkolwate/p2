@@ -21,16 +21,16 @@ const path = require("path");
 const os = require("os");
 
 // ── Route Modules ──────────────────────────────────────────────────────────
-const certificateRoutes   = require("./routes/certificateRoutes");
-const blockchainRoutes    = require("./routes/blockchainRoutes");
-const hashRoutes          = require("./routes/hashRoutes");
-const analyticsRoutes     = require("./routes/analyticsRoutes");
-const contactRoutes       = require("./routes/contactRoutes");
-const notificationRoutes  = require("./routes/notificationRoutes");
-const verificationRoutes  = require("./routes/verificationRoutes");
-const authRoutes          = require("./routes/authRoutes");
-const requireAuth         = require("./middleware/auth");
-const certificateService  = require("./services/certificateService");
+const certificateRoutes = require("./routes/certificateRoutes");
+const blockchainRoutes = require("./routes/blockchainRoutes");
+const hashRoutes = require("./routes/hashRoutes");
+const analyticsRoutes = require("./routes/analyticsRoutes");
+const contactRoutes = require("./routes/contactRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
+const verificationRoutes = require("./routes/verificationRoutes");
+const authRoutes = require("./routes/authRoutes");
+const requireAuth = require("./middleware/auth");
+const certificateService = require("./services/certificateService");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -38,7 +38,7 @@ const PORT = process.env.PORT || 5000;
 // ── Middleware ─────────────────────────────────────────────────────────────
 app.use(cors({
   origin: [
-    "https://nilkolwate.github.io",
+    "https://sayalijogi26-alt.github.io",
     "http://localhost:3000",
     "http://127.0.0.1:3000"
   ],
@@ -84,7 +84,7 @@ app.use("/api/hash", hashRoutes);
 app.use("/api/verify", verificationRoutes);
 
 // Module 6 — Analytics & Dashboard Stats (Admin Protected)
-app.use("/api/reports",   requireAuth, analyticsRoutes);
+app.use("/api/reports", requireAuth, analyticsRoutes);
 app.use("/api/dashboard", requireAuth, analyticsRoutes);
 
 // Module 7 — Notifications (Admin Protected)
@@ -92,18 +92,18 @@ app.use("/api/notifications", requireAuth, notificationRoutes);
 
 // Module 8 — Contact / Support Email
 app.use("/api/contact", contactRoutes);
-app.use("/api/support",  contactRoutes);
-app.use("/support",      contactRoutes);
+app.use("/api/support", contactRoutes);
+app.use("/support", contactRoutes);
 
 // Auth & Admin OTP Module (from blockvault vs code)
 app.use("/api/auth", authRoutes);
-app.use("/",         authRoutes); // Provides /admin-login and /verify-otp
+app.use("/", authRoutes); // Provides /admin-login and /verify-otp
 
 // ── Standalone QR Verification Route ───────────────────────────────────────
 // When QR is scanned, automatically redirect to the live frontend verification page
 app.get("/verify", (req, res) => {
   const certId = req.query.id || req.query.certificateId;
-  const frontendUrl = (process.env.FRONTEND_URL || "https://nilkolwate.github.io/p2").replace(/\/+$/, "");
+  const frontendUrl = (process.env.FRONTEND_URL || "https://sayalijogi26-alt.github.io/p2").replace(/\/+$/, "");
   if (certId) {
     return res.redirect(302, `${frontendUrl}/#/verify/${encodeURIComponent(certId)}`);
   }
@@ -115,7 +115,7 @@ app.get("/verify/:certificateId", (req, res) => {
     const rawId = req.params.certificateId;
     const certificateId =
       certificateService.extractCertificateIdFromQR(rawId) || rawId;
-    const frontendUrl = (process.env.FRONTEND_URL || "https://nilkolwate.github.io/p2").replace(/\/+$/, "");
+    const frontendUrl = (process.env.FRONTEND_URL || "https://sayalijogi26-alt.github.io/p2").replace(/\/+$/, "");
 
     // Allow ?format=html for explicit server-side debug view
     if (req.query.format !== "html") {
@@ -174,10 +174,10 @@ app.get("/verify/:certificateId", (req, res) => {
           .header p{font-size:13px;opacity:.85;margin-top:4px}
           .container{max-width:800px;margin:30px auto;padding:0 16px 40px}
           .card{background:#fff;border-radius:16px;padding:28px;box-shadow:0 4px 20px rgba(0,0,0,0.07);border:1px solid #e8eef4;margin-bottom:20px}
-          .status-icon{width:80px;height:80px;margin:0 auto 16px;border-radius:50%;background:${isRevoked?"#fee2e2":"#dcfce7"};display:flex;align-items:center;justify-content:center;font-size:40px}
-          .status-title{font-size:22px;font-weight:700;color:${isRevoked?"#dc2626":"#16a34a"};text-align:center;margin-bottom:8px}
+          .status-icon{width:80px;height:80px;margin:0 auto 16px;border-radius:50%;background:${isRevoked ? "#fee2e2" : "#dcfce7"};display:flex;align-items:center;justify-content:center;font-size:40px}
+          .status-title{font-size:22px;font-weight:700;color:${isRevoked ? "#dc2626" : "#16a34a"};text-align:center;margin-bottom:8px}
           .status-msg{text-align:center;color:#666;font-size:14px;line-height:1.6}
-          .badge{display:inline-block;padding:4px 14px;border-radius:50px;font-size:12px;font-weight:700;background:${isRevoked?"#fee2e2":"#dcfce7"};color:${isRevoked?"#dc2626":"#16a34a"};margin:12px auto;display:block;width:fit-content}
+          .badge{display:inline-block;padding:4px 14px;border-radius:50px;font-size:12px;font-weight:700;background:${isRevoked ? "#fee2e2" : "#dcfce7"};color:${isRevoked ? "#dc2626" : "#16a34a"};margin:12px auto;display:block;width:fit-content}
           h3{font-size:16px;color:#1F3D2B;font-weight:700;border-bottom:2px solid #f0f4f8;padding-bottom:12px;margin-bottom:16px}
           .row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f5f5f5;gap:20px;font-size:14px}
           .row:last-child{border-bottom:none}
@@ -199,27 +199,27 @@ app.get("/verify/:certificateId", (req, res) => {
         </div>
         <div class="container">
           <div class="card" style="text-align:center">
-            <div class="status-icon">${isRevoked?"❌":"✅"}</div>
-            <div class="status-title">${isRevoked?"Certificate REVOKED":"Certificate Verified Successfully"}</div>
+            <div class="status-icon">${isRevoked ? "❌" : "✅"}</div>
+            <div class="status-title">${isRevoked ? "Certificate REVOKED" : "Certificate Verified Successfully"}</div>
             <div class="badge">${cert.status || "Valid"}</div>
             <p class="status-msg">${isRevoked
-              ? `This credential was revoked: <strong>${cert.revocationReason||"Administrative Review"}</strong>`
-              : "This academic certificate is authentic and securely anchored on the BlockVault blockchain."
-            }</p>
+        ? `This credential was revoked: <strong>${cert.revocationReason || "Administrative Review"}</strong>`
+        : "This academic certificate is authentic and securely anchored on the BlockVault blockchain."
+      }</p>
           </div>
 
           <div class="card">
             <h3>📋 Certificate Credentials</h3>
-            <div class="row"><span class="label">Certificate ID</span><span class="value"><strong>${cert.certificateId||cert.id}</strong></span></div>
+            <div class="row"><span class="label">Certificate ID</span><span class="value"><strong>${cert.certificateId || cert.id}</strong></span></div>
             <div class="row"><span class="label">Student Name</span><span class="value">${cert.studentName}</span></div>
-            <div class="row"><span class="label">Roll Number</span><span class="value">${cert.rollNumber||"N/A"}</span></div>
+            <div class="row"><span class="label">Roll Number</span><span class="value">${cert.rollNumber || "N/A"}</span></div>
             <div class="row"><span class="label">Course / Degree</span><span class="value">${cert.course}</span></div>
-            <div class="row"><span class="label">Department</span><span class="value">${cert.department||"Computer Engineering"}</span></div>
-            <div class="row"><span class="label">Institution</span><span class="value">${cert.institution||"Government Polytechnic Amravati"}</span></div>
+            <div class="row"><span class="label">Department</span><span class="value">${cert.department || "Computer Engineering"}</span></div>
+            <div class="row"><span class="label">Institution</span><span class="value">${cert.institution || "Government Polytechnic Amravati"}</span></div>
             <div class="row"><span class="label">Issue Date</span><span class="value">${cert.issueDate}</span></div>
-            <div class="row"><span class="label">Grade</span><span class="value">${cert.grade||"First Class with Distinction"}</span></div>
-            <div class="row"><span class="label">Blockchain Block</span><span class="value">${cert.blockNumber||"Block #1"}</span></div>
-            <div class="row"><span class="label">SHA-256 Hash</span><span class="value hash">${cert.hash||cert.sha256||"N/A"}</span></div>
+            <div class="row"><span class="label">Grade</span><span class="value">${cert.grade || "First Class with Distinction"}</span></div>
+            <div class="row"><span class="label">Blockchain Block</span><span class="value">${cert.blockNumber || "Block #1"}</span></div>
+            <div class="row"><span class="label">SHA-256 Hash</span><span class="value hash">${cert.hash || cert.sha256 || "N/A"}</span></div>
           </div>
 
           <div class="card">
