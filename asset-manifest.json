@@ -1,11 +1,11 @@
 {
   "files": {
-    "main.css": "/p2/static/css/main.1bea115a.css",
-    "main.js": "/p2/static/js/main.b9f262e3.js",
-    "index.html": "/p2/index.html"
+    "main.css": "/Blockvault-1/static/css/main.1bea115a.css",
+    "main.js": "/Blockvault-1/static/js/main.3512a869.js",
+    "index.html": "/Blockvault-1/index.html"
   },
   "entrypoints": [
     "static/css/main.1bea115a.css",
-    "static/js/main.b9f262e3.js"
+    "static/js/main.3512a869.js"
   ]
 }
