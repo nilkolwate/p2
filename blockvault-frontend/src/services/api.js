@@ -7,8 +7,8 @@
 
 import { getToken, setAdminSession, logoutAdmin } from '../utils/auth';
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
-const cleanBaseUrl = API_URL.replace(/\/+$/, '');
+const API_URL = (process.env.REACT_APP_API_URL || '').replace(/\/+$/, '');
+const cleanBaseUrl = API_URL;
 const BACKEND_URL = cleanBaseUrl.replace(/\/api\/?$/, '');
 
 function buildUrl(endpoint) {

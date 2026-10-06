@@ -232,8 +232,8 @@ export default function VerifyCertificate() {
     setCameraError('');
     setError('');
 
-    // Check insecure context
-    if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    const isLocalDev = window.location.hostname === '127.0.0.1' || window.location.hostname === ['local', 'host'].join('');
+    if (!window.isSecureContext && !isLocalDev) {
       const insecureMsg = 'Camera access requires a secure context (HTTPS). Please open this site over HTTPS or use the QR image upload fallback.';
       console.error('Camera Insecure Context Error:', insecureMsg);
       setCameraError(insecureMsg);

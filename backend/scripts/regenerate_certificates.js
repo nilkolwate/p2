@@ -51,7 +51,7 @@ async function run() {
     // Update JSON
     content.verificationUrl = canonicalUrl;
     content.qrDataUrl = qrDataUrl;
-    content.pdfUrl = `https://p2-c6yu.onrender.com/certificates/${certId}.pdf`;
+    content.pdfUrl = `https://blockvault-1.onrender.com/certificates/${certId}.pdf`;
     content.hash = hash;
     content.sha256 = hash;
 

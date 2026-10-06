@@ -48,9 +48,9 @@ function getBackendBaseUrl(hostHeader = null) {
     return `https://${hostHeader}`;
   }
   if (process.env.NODE_ENV === "production") {
-    return "https://p2-c6yu.onrender.com";
+    return "https://blockvault-1.onrender.com";
   }
-  return "https://p2-c6yu.onrender.com";
+  return "https://blockvault-1.onrender.com";
 }
 
 /**
