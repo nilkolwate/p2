@@ -1199,7 +1199,7 @@ function Contact() {
 
                   <small>EMAIL</small>
 
-                  <p>blockvault.support@gmail.com</p>
+                  <p>blockvault0926@gmail.com</p>
 
                 </div>
 

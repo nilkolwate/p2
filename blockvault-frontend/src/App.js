@@ -28,6 +28,7 @@ function App() {
           <Route path="/verify/result" element={<VerificationResult />} />
           {/* Direct verification route when opened via QR or URL with certificateId */}
           <Route path="/verify/:certificateId" element={<VerificationResult />} />
+          <Route path="/verify/:id" element={<VerificationResult />} />
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/login" element={<AdminLogin />} />

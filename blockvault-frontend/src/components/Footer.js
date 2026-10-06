@@ -16,6 +16,14 @@ const Footer = () => {
             <p className="text-white/60 text-sm leading-relaxed max-w-xs">
               Blockchain-based academic certificate verification. Secure, transparent, and trusted.
             </p>
+            <div className="mt-3">
+              <a
+                href="mailto:blockvault0926@gmail.com"
+                className="text-xs text-brand-sage hover:text-white transition-colors"
+              >
+                Support: blockvault0926@gmail.com
+              </a>
+            </div>
           </div>
 
           {/* Navigation */}

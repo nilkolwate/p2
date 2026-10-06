@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "private": true,
   "homepage": "https://sayalijogi26-alt.github.io/Blockvault-1",
-  "proxy": "https://p2-c6yu.onrender.com",
+  "proxy": "https://blockvault-1.onrender.com",
   "dependencies": {
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",
