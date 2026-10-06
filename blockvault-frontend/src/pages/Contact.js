@@ -221,9 +221,12 @@ export default function Contact() {
                     <span className="text-xs text-gray-400 font-medium uppercase tracking-wider block">
                       Support Inquiries
                     </span>
-                    <span className="text-sm text-[#1F3D2B] font-medium">
-                      Direct Inquiries via Contact Form
-                    </span>
+                    <a
+                      href="mailto:blockvault0926@gmail.com"
+                      className="text-sm text-[#1F3D2B] font-medium hover:underline"
+                    >
+                      blockvault0926@gmail.com
+                    </a>
                   </div>
                 </li>
 

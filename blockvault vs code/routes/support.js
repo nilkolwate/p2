@@ -25,7 +25,7 @@ function sendSupportEmail(req, res) {
 
     const mailOptions = {
         from: process.env.EMAIL_USER,
-        to: "blockvault.support@gmail.com",
+        to: process.env.SUPPORT_EMAIL || "blockvault0926@gmail.com",
         replyTo: userEmail,
         subject: "BlockVault Support Problem",
         text:

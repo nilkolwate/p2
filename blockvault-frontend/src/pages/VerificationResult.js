@@ -8,7 +8,7 @@ export default function VerificationResult() {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { certificateId: routeCertId } = useParams();
+  const { certificateId: routeCertId, id: routeId } = useParams();
 
   const [liveData, setLiveData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -18,8 +18,8 @@ export default function VerificationResult() {
 
   const queryId = searchParams.get('id');
   const queryHash = searchParams.get('hash');
-  const certIdToUse = routeCertId || stateCertId || queryId || stateResult?.certificateRecord?.id;
-  const isQRVerification = fromQR || (queryId && queryHash) || Boolean(routeCertId);
+  const certIdToUse = routeCertId || routeId || stateCertId || queryId || stateResult?.certificateRecord?.id;
+  const isQRVerification = fromQR || (queryId && queryHash) || Boolean(routeCertId || routeId);
 
   // If page was loaded directly via URL / refreshed, fetch directly from backend
   useEffect(() => {

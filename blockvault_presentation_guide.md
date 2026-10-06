@@ -33,7 +33,7 @@ Traditional paper certificates can be duplicated or altered. BlockVault provides
 ### 🔹 Module 2: Authentication & Contact Support Desk
 - **Key Concepts:** Secure role-based administrative access, SMTP email routing via Nodemailer.
 - **Backend Files:**
-  - `backend/routes/contactRoutes.js`: Uses Gmail SMTP (`nodemailer`) to dispatch inquiries directly to `blockvault.support@gmail.com`.
+  - `backend/routes/contactRoutes.js`: Uses Gmail SMTP (`nodemailer`) to dispatch inquiries directly to `blockvault0926@gmail.com`.
 - **Frontend Integration:**
   - `blockvault-frontend/src/pages/Contact.js`: Form handles Name, Email, Subject, and Inquiry Message. Calls `POST /api/contact` with loading spinner and success modal.
 
